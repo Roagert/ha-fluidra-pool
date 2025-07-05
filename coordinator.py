@@ -179,9 +179,32 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self) -> Dict[str, Any]:
         _LOGGER.info("[Fluidra Debug] Coordinator _async_update_data called at %s", datetime.now())
-        data = await super()._async_update_data() if hasattr(super(), '_async_update_data') else None
-        _LOGGER.info("[Fluidra Debug] Coordinator _async_update_data finished at %s", datetime.now())
-        return data
+        try:
+            # Fetch all relevant data from the Fluidra API
+            await self._fetch_with_retries(self._fetch_consumer_data)
+            await self._fetch_with_retries(self._fetch_devices_data)
+            await self._fetch_with_retries(self._fetch_user_profile_data)
+            await self._fetch_with_retries(self._fetch_user_pools_data)
+            # Fetch device components and UI config for the first device
+            if self.devices:
+                first_device_id = next(iter(self.devices.keys()))
+                await self._fetch_with_retries(self._fetch_device_components_data, first_device_id)
+                await self._fetch_with_retries(self._fetch_device_uiconfig_data, first_device_id)
+            # Return a summary dict for debugging
+            data = {
+                "consumer_data": self.consumer_data,
+                "devices": self.devices,
+                "user_profile_data": self.user_profile_data,
+                "user_pools_data": self.user_pools_data,
+                "device_components_data": self.device_components_data,
+                "device_uiconfig_data": self.device_uiconfig_data,
+                "error_information": self.error_information,
+            }
+            _LOGGER.info("[Fluidra Debug] Coordinator _async_update_data finished at %s", datetime.now())
+            return data
+        except Exception as err:
+            _LOGGER.error("[Fluidra Debug] Error in _async_update_data: %s", err)
+            raise UpdateFailed(f"Fluidra update failed: {err}")
     
     async def _fetch_consumer_data(self) -> None:
         """Fetch consumer data from API."""
