@@ -1,0 +1,26 @@
+{
+  "domain": "fluidra_pool",
+  "name": "Fluidra Pool",
+  "config_flow": true,
+  "documentation": "https://github.com/your-username/fluidra_pool",
+  "issue_tracker": "https://github.com/your-username/fluidra_pool/issues",
+  "dependencies": [],
+  "codeowners": ["@your-username"],
+  "requirements": [
+    "aiohttp>=3.8.0",
+    "boto3>=1.26.0",
+    "pycognito>=2023.5.0"
+  ],
+  "ssdp": [],
+  "zeroconf": [],
+  "homekit": {},
+  "iot_class": "cloud_polling",
+  "version": "1.0.0",
+  "integration_type": "device",
+  "brand": "Fluidra",
+  "model": "Pool Heat Pump",
+  "supported_by": "community",
+  "quality_scale": "platinum",
+  "icon": "icon.svg",
+  "logo": "logo.png"
+} 
