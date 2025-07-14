@@ -65,7 +65,7 @@ logger:
 
 If you're still experiencing issues:
 
-1. Check the [GitHub issues](https://github.com/your-username/ha-fluidra-pool/issues)
+1. Check the [GitHub issues](https://github.com/Roagert/ha-fluidra-pool/issues)
 2. Create a new issue with:
    - Detailed description of the problem
    - Debug logs

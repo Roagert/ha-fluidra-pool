@@ -49,18 +49,18 @@ Code template was mainly taken from [@Ludeeus](https://github.com/ludeeus)'s [in
 ---
 
 [integration_blueprint]: https://github.com/custom-components/integration_blueprint
-[buymecoffee]: https://www.buymeacoffee.com/your-username
+[buymecoffee]: https://www.buymeacoffee.com/roagert
 [buymecoffeebadge]: https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg
-[commits-shield]: https://img.shields.io/github/commit-activity/y/your-username/ha-fluidra-pool.svg
-[commits]: https://github.com/your-username/ha-fluidra-pool/commits/main
+[commits-shield]: https://img.shields.io/github/commit-activity/y/Roagert/ha-fluidra-pool.svg
+[commits]: https://github.com/Roagert/ha-fluidra-pool/commits/main
 [hacs]: https://hacs.xyz
 [hacsbadge]: https://img.shields.io/badge/HACS-Custom-orange.svg
 [discord]: https://discord.gg/Qa5fW2R
 [discord-shield]: https://img.shields.io/discord/330944238910963714.svg
 [forum-shield]: https://img.shields.io/badge/community-forum-brightgreen.svg
 [forum]: https://community.home-assistant.io/
-[license-shield]: https://img.shields.io/github/license/your-username/ha-fluidra-pool.svg
-[maintenance-shield]: https://img.shields.io/badge/maintainer-%40your--username-blue.svg
-[releases-shield]: https://img.shields.io/github/release/your-username/ha-fluidra-pool.svg
-[releases]: https://github.com/your-username/ha-fluidra-pool/releases
-[user_profile]: https://github.com/your-username 
+[license-shield]: https://img.shields.io/github/license/Roagert/ha-fluidra-pool.svg
+[maintenance-shield]: https://img.shields.io/badge/maintainer-%40roagert-blue.svg
+[releases-shield]: https://img.shields.io/github/release/Roagert/ha-fluidra-pool.svg
+[releases]: https://github.com/Roagert/ha-fluidra-pool/releases
+[user_profile]: https://github.com/roagert 
