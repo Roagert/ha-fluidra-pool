@@ -1,0 +1,23 @@
+# Fluidra Pool Integration Services
+
+# Service to dump raw API data for diagnostics
+dump_api_data:
+  name: "Dump API Data"
+  description: "Dump raw API data from Fluidra Pool integration for diagnostics"
+  target:
+    entity:
+      integration: fluidra_pool
+  fields:
+    device_id:
+      name: "Device ID"
+      description: "Optional device ID to dump data for specific device"
+      required: false
+      selector:
+        text:
+    include_raw:
+      name: "Include Raw Data"
+      description: "Include raw API response data in the dump"
+      required: false
+      default: false
+      selector:
+        boolean: 
