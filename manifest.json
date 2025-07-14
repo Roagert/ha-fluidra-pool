@@ -2,10 +2,10 @@
   "domain": "fluidra_pool",
   "name": "Fluidra Pool",
   "config_flow": true,
-  "documentation": "https://github.com/your-username/ha-fluidra-pool",
-  "issue_tracker": "https://github.com/your-username/ha-fluidra-pool/issues",
+  "documentation": "https://github.com/Roagert/ha-fluidra-pool",
+  "issue_tracker": "https://github.com/Roagert/ha-fluidra-pool/issues",
   "dependencies": [],
-  "codeowners": ["@your-username"],
+  "codeowners": ["@roagert"],
   "requirements": [
     "aiohttp>=3.8.0",
     "boto3>=1.26.0",
