@@ -52,6 +52,9 @@ class FluidraAuth:
                 self.refresh_token = auth_result["refresh_token"]
                 self.token_expiry = auth_result["expiry"]
                 _LOGGER.debug("Successfully authenticated with Fluidra Pool API")
+                _LOGGER.debug("Access token: %s...%s", 
+                            self.access_token[:10] if self.access_token else 'None',
+                            self.access_token[-10:] if self.access_token else 'None')
                 return True
             else:
                 _LOGGER.error("Authentication failed - no auth result returned")
@@ -97,17 +100,33 @@ class FluidraAuth:
             # Extract tokens from response
             if 'AuthenticationResult' not in response:
                 _LOGGER.error("No authentication result in response")
+                _LOGGER.debug("Response: %s", response)
                 return None
                 
             auth_result = response['AuthenticationResult']
+            _LOGGER.debug("Auth result keys: %s", auth_result.keys())
+            
+            # Check for required tokens
+            if not all(key in auth_result for key in ['AccessToken', 'IdToken', 'RefreshToken']):
+                _LOGGER.error("Missing required tokens in authentication result")
+                _LOGGER.debug("Available tokens: %s", list(auth_result.keys()))
+                return None
+            
             expires_in = auth_result.get('ExpiresIn', 3600)  # Default 1 hour if not specified
             
-            return {
+            result = {
                 "access_token": auth_result['AccessToken'],
                 "expiry": datetime.now() + timedelta(seconds=expires_in),
                 "id_token": auth_result['IdToken'],
                 "refresh_token": auth_result['RefreshToken']
             }
+            
+            _LOGGER.debug("Authentication successful, tokens received")
+            _LOGGER.debug("Access token: %s...%s", 
+                         result["access_token"][:10],
+                         result["access_token"][-10:])
+            
+            return result
             
         except ClientError as e:
             error_code = e.response.get('Error', {}).get('Code', 'Unknown')
@@ -135,11 +154,14 @@ class FluidraAuth:
     
     def get_auth_headers(self) -> Dict[str, str]:
         """Get authentication headers for API requests."""
-        if not self.access_token:
-            _LOGGER.warning("No access token available for headers")
+        if not self.access_token or not self.id_token:
+            _LOGGER.warning("No access token or ID token available for headers")
+            _LOGGER.debug("Access token: %s, ID token: %s", 
+                         bool(self.access_token), 
+                         bool(self.id_token))
             return {}
         
-        return {
+        headers = {
             "Authorization": f"Bearer {self.access_token}",
             "Content-Type": "application/json",
             "Accept": "application/json",
@@ -147,11 +169,15 @@ class FluidraAuth:
             "x-access-token": self.access_token,
             "User-Agent": "Fluidra/1.0"
         }
+        
+        _LOGGER.debug("Generated headers with tokens")
+        return headers
     
     def is_authenticated(self) -> bool:
         """Check if currently authenticated."""
         is_auth = (
             self.id_token is not None and 
+            self.access_token is not None and
             self.token_expiry is not None and 
             datetime.now() < self.token_expiry
         )
