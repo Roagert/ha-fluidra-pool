@@ -30,20 +30,34 @@ class FluidraAuth:
         self.id_token: Optional[str] = None
         self.refresh_token: Optional[str] = None
         self.token_expiry: Optional[datetime] = None
+        self.cognito_client = None
+        self._client_lock = asyncio.Lock()
         
-        # Initialize Cognito client with configuration
-        self.cognito_client = boto3.client(
-            'cognito-idp',
-            region_name=COGNITO_REGION,
-            config=BOTO_CONFIG
-        )
+    async def _get_cognito_client(self):
+        """Get or create the Cognito client in an async-safe way."""
+        async with self._client_lock:
+            if self.cognito_client is None:
+                self.cognito_client = await asyncio.get_event_loop().run_in_executor(
+                    None,
+                    lambda: boto3.client(
+                        'cognito-idp',
+                        region_name=COGNITO_REGION,
+                        config=BOTO_CONFIG
+                    )
+                )
+            return self.cognito_client
         
     async def authenticate(self) -> bool:
         """Authenticate with Fluidra Pool API."""
         try:
+            # Get the client in an async-safe way
+            client = await self._get_cognito_client()
+            
             # Run authentication in executor to avoid blocking
             auth_result = await asyncio.get_event_loop().run_in_executor(
-                None, self._authenticate_sync
+                None,
+                self._authenticate_sync,
+                client
             )
             
             if auth_result:
@@ -67,7 +81,7 @@ class FluidraAuth:
             _LOGGER.error("Authentication error: %s", str(err))
             return False
     
-    def _authenticate_sync(self) -> Optional[Dict[str, Any]]:
+    def _authenticate_sync(self, client) -> Optional[Dict[str, Any]]:
         """Synchronously perform AWS Cognito authentication."""
         try:
             _LOGGER.debug("Starting authentication process for user: %s", self.username)
@@ -75,7 +89,7 @@ class FluidraAuth:
             # Initiate direct password authentication
             try:
                 _LOGGER.debug("Initiating password authentication")
-                response = self.cognito_client.initiate_auth(
+                response = client.initiate_auth(
                     AuthFlow='USER_PASSWORD_AUTH',
                     AuthParameters={
                         'USERNAME': self.username,
