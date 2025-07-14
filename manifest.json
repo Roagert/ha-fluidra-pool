@@ -2,8 +2,8 @@
   "domain": "fluidra_pool",
   "name": "Fluidra Pool",
   "config_flow": true,
-  "documentation": "https://github.com/your-username/fluidra_pool",
-  "issue_tracker": "https://github.com/your-username/fluidra_pool/issues",
+  "documentation": "https://github.com/your-username/ha-fluidra-pool",
+  "issue_tracker": "https://github.com/your-username/ha-fluidra-pool/issues",
   "dependencies": [],
   "codeowners": ["@your-username"],
   "requirements": [
@@ -22,5 +22,6 @@
   "supported_by": "community",
   "quality_scale": "platinum",
   "icon": "icon.svg",
-  "logo": "logo.png"
+  "logo": "logo.png",
+  "homeassistant": "2023.8.0"
 } 
