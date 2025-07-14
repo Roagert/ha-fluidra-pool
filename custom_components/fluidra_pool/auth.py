@@ -143,9 +143,9 @@ class FluidraAuth:
             "Authorization": f"Bearer {self.access_token}",
             "Content-Type": "application/json",
             "Accept": "application/json",
-            "x-api-key": self.id_token,  # Include ID token as API key
-            "x-access-token": self.access_token,  # Include access token explicitly
-            "User-Agent": "Fluidra/1.0"  # Add User-Agent to identify client
+            "x-api-key": self.id_token,
+            "x-access-token": self.access_token,
+            "User-Agent": "Fluidra/1.0"
         }
     
     def is_authenticated(self) -> bool:
