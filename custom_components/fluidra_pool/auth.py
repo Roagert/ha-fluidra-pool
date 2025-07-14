@@ -5,12 +5,19 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 
 import boto3
-from pycognito import AWSSRP
+import botocore.config
 from botocore.exceptions import ClientError
 
 from .const import COGNITO_REGION, COGNITO_POOL_ID, COGNITO_CLIENT_ID
 
 _LOGGER = logging.getLogger(__name__)
+
+# Configure boto3 to not use EC2 metadata service and optimize performance
+BOTO_CONFIG = botocore.config.Config(
+    connect_timeout=5,
+    read_timeout=5,
+    retries={'max_attempts': 2}
+)
 
 class FluidraAuth:
     """Handle Fluidra Pool authentication using AWS Cognito."""
@@ -23,6 +30,13 @@ class FluidraAuth:
         self.id_token: Optional[str] = None
         self.refresh_token: Optional[str] = None
         self.token_expiry: Optional[datetime] = None
+        
+        # Initialize Cognito client with configuration
+        self.cognito_client = boto3.client(
+            'cognito-idp',
+            region_name=COGNITO_REGION,
+            config=BOTO_CONFIG
+        )
         
     async def authenticate(self) -> bool:
         """Authenticate with Fluidra Pool API."""
@@ -54,25 +68,17 @@ class FluidraAuth:
         """Synchronously perform AWS Cognito authentication."""
         try:
             _LOGGER.debug("Starting authentication process for user: %s", self.username)
-            client = boto3.client('cognito-idp', region_name=COGNITO_REGION)
             
-            # Start SRP authentication
-            aws_srp = AWSSRP(
-                username=self.username,
-                password=self.password,
-                pool_id=COGNITO_POOL_ID,
-                client_id=COGNITO_CLIENT_ID,
-                client=client
-            )
-            auth_params = aws_srp.get_auth_params()
-            
-            # Initiate authentication
+            # Initiate direct password authentication
             try:
-                _LOGGER.debug("Initiating SRP authentication")
-                response = client.initiate_auth(
-                    ClientId=COGNITO_CLIENT_ID,
-                    AuthFlow='USER_SRP_AUTH',
-                    AuthParameters=auth_params
+                _LOGGER.debug("Initiating password authentication")
+                response = self.cognito_client.initiate_auth(
+                    AuthFlow='USER_PASSWORD_AUTH',
+                    AuthParameters={
+                        'USERNAME': self.username,
+                        'PASSWORD': self.password
+                    },
+                    ClientId=COGNITO_CLIENT_ID
                 )
             except ClientError as e:
                 error_code = e.response.get('Error', {}).get('Code', 'Unknown')
@@ -88,36 +94,7 @@ class FluidraAuth:
                                 e.response.get('Error', {}).get('Message', str(e)))
                 return None
             
-            # Handle authentication challenges
-            challenge_name = response.get('ChallengeName')
-            if challenge_name:
-                _LOGGER.debug("Received challenge: %s", challenge_name)
-                
-                if challenge_name == 'PASSWORD_VERIFIER':
-                    _LOGGER.debug("Processing password verifier challenge")
-                    challenge_responses = aws_srp.process_challenge(
-                        response['ChallengeParameters'],
-                        auth_params
-                    )
-                    
-                    try:
-                        response = client.respond_to_auth_challenge(
-                            ClientId=COGNITO_CLIENT_ID,
-                            ChallengeName='PASSWORD_VERIFIER',
-                            ChallengeResponses=challenge_responses
-                        )
-                    except ClientError as e:
-                        _LOGGER.error("Failed to respond to password challenge: %s", e)
-                        return None
-                        
-                elif challenge_name == 'NEW_PASSWORD_REQUIRED':
-                    _LOGGER.error("User must change password before logging in")
-                    return None
-                else:
-                    _LOGGER.error("Unsupported challenge type: %s", challenge_name)
-                    return None
-            
-            # Extract tokens
+            # Extract tokens from response
             if 'AuthenticationResult' not in response:
                 _LOGGER.error("No authentication result in response")
                 return None
