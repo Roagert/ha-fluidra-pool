@@ -1,0 +1,297 @@
+2025-08-29 13:26:17,881 DEBUG [asyncio] Using proactor: IocpProactor
+2025-08-29 13:26:17,888 INFO [__main__] Starting Enhanced Fluidra authentication test
+2025-08-29 13:26:17,890 INFO [__main__] Using Cognito configuration:
+2025-08-29 13:26:17,891 INFO [__main__]   Region: eu-west-1
+2025-08-29 13:26:17,894 INFO [__main__]   Pool ID: eu-west-1_OnopMZF9X
+2025-08-29 13:26:17,895 INFO [__main__]   Client ID: g3njunelkcbtefosqm9bdhhq1
+2025-08-29 13:26:35,801 INFO [__main__] Testing enhanced authentication...
+2025-08-29 13:26:35,801 INFO [__main__] Resolving DNS for api.fluidra-emea.com...
+2025-08-29 13:26:35,827 INFO [__main__] Successfully resolved api.fluidra-emea.com to 45.60.80.124
+2025-08-29 13:26:35,828 DEBUG [botocore.hooks] Changing event name from creating-client-class.iot-data to creating-client-class.iot-data-plane
+2025-08-29 13:26:35,831 DEBUG [botocore.hooks] Changing event name from before-call.apigateway to before-call.api-gateway
+2025-08-29 13:26:35,832 DEBUG [botocore.hooks] Changing event name from request-created.machinelearning.Predict to request-created.machine-learning.Predict
+2025-08-29 13:26:35,833 DEBUG [botocore.hooks] Changing event name from before-parameter-build.autoscaling.CreateLaunchConfiguration to before-parameter-build.auto-scaling.CreateLaunchConfiguration
+2025-08-29 13:26:35,833 DEBUG [botocore.hooks] Changing event name from before-parameter-build.route53 to before-parameter-build.route-53
+2025-08-29 13:26:35,834 DEBUG [botocore.hooks] Changing event name from request-created.cloudsearchdomain.Search to request-created.cloudsearch-domain.Search
+2025-08-29 13:26:35,835 DEBUG [botocore.hooks] Changing event name from docs.*.autoscaling.CreateLaunchConfiguration.complete-section to docs.*.auto-scaling.CreateLaunchConfiguration.complete-section
+2025-08-29 13:26:35,838 DEBUG [botocore.hooks] Changing event name from before-parameter-build.logs.CreateExportTask to before-parameter-build.cloudwatch-logs.CreateExportTask
+2025-08-29 13:26:35,839 DEBUG [botocore.hooks] Changing event name from docs.*.logs.CreateExportTask.complete-section to docs.*.cloudwatch-logs.CreateExportTask.complete-section
+2025-08-29 13:26:35,840 DEBUG [botocore.hooks] Changing event name from before-parameter-build.cloudsearchdomain.Search to before-parameter-build.cloudsearch-domain.Search
+2025-08-29 13:26:35,841 DEBUG [botocore.hooks] Changing event name from docs.*.cloudsearchdomain.Search.complete-section to docs.*.cloudsearch-domain.Search.complete-section
+2025-08-29 13:26:35,845 DEBUG [botocore.utils] IMDS ENDPOINT: http://169.254.169.254/
+2025-08-29 13:26:35,848 DEBUG [botocore.credentials] Looking for credentials via: env
+2025-08-29 13:26:35,848 DEBUG [botocore.credentials] Looking for credentials via: assume-role
+2025-08-29 13:26:35,849 DEBUG [botocore.credentials] Looking for credentials via: assume-role-with-web-identity
+2025-08-29 13:26:35,849 DEBUG [botocore.credentials] Looking for credentials via: sso
+2025-08-29 13:26:35,849 DEBUG [botocore.credentials] Looking for credentials via: shared-credentials-file
+2025-08-29 13:26:35,850 DEBUG [botocore.credentials] Looking for credentials via: custom-process
+2025-08-29 13:26:35,850 DEBUG [botocore.credentials] Looking for credentials via: config-file
+2025-08-29 13:26:35,850 DEBUG [botocore.credentials] Looking for credentials via: ec2-credentials-file
+2025-08-29 13:26:35,851 DEBUG [botocore.credentials] Looking for credentials via: boto-config
+2025-08-29 13:26:35,851 DEBUG [botocore.credentials] Looking for credentials via: container-role
+2025-08-29 13:26:35,852 DEBUG [botocore.credentials] Looking for credentials via: iam-role
+2025-08-29 13:26:35,853 DEBUG [urllib3.connectionpool] Starting new HTTP connection (1): 169.254.169.254:80
+2025-08-29 13:26:35,855 DEBUG [botocore.utils] Caught retryable HTTP exception while making metadata service request to http://169.254.169.254/latest/api/token: Could not connect to the endpoint URL: "http://169.254.169.254/latest/api/token"
+Traceback (most recent call last):
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connection.py", line 198, in _new_conn
+    sock = connection.create_connection(
+        (self._dns_host, self.port),
+    ...<2 lines>...
+        socket_options=self.socket_options,
+    )
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\util\connection.py", line 85, in create_connection
+    raise err
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\util\connection.py", line 73, in create_connection
+    sock.connect(sa)
+    ~~~~~~~~~~~~^^^^
+OSError: [WinError 10051] A socket operation was attempted to an unreachable network
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\httpsession.py", line 464, in send
+    urllib_response = conn.urlopen(
+        method=request.method,
+    ...<7 lines>...
+        chunked=self._chunked(request.headers),
+    )
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\util\retry.py", line 449, in increment
+    raise reraise(type(error), error, _stacktrace)
+          ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\util\util.py", line 39, in reraise
+    raise value
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connectionpool.py", line 493, in _make_request
+    conn.request(
+    ~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<6 lines>...
+        enforce_content_length=enforce_content_length,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\awsrequest.py", line 96, in request
+    rval = super().request(method, url, body, headers, *args, **kwargs)
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connection.py", line 445, in request
+    self.endheaders()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\http\client.py", line 1333, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\awsrequest.py", line 123, in _send_output
+    self.send(msg)
+    ~~~~~~~~~^^^^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\awsrequest.py", line 223, in send
+    return super().send(str)
+           ~~~~~~~~~~~~^^^^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\http\client.py", line 1037, in send
+    self.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connection.py", line 276, in connect
+    self.sock = self._new_conn()
+                ~~~~~~~~~~~~~~^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connection.py", line 213, in _new_conn
+    raise NewConnectionError(
+        self, f"Failed to establish a new connection: {e}"
+    ) from e
+urllib3.exceptions.NewConnectionError: <botocore.awsrequest.AWSHTTPConnection object at 0x00000108904E4EC0>: Failed to establish a new connection: [WinError 10051] A socket operation was attempted to an unreachable network
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\utils.py", line 463, in _fetch_metadata_token
+    response = self._session.send(request.prepare())
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\httpsession.py", line 493, in send
+    raise EndpointConnectionError(endpoint_url=request.url, error=e)
+botocore.exceptions.EndpointConnectionError: Could not connect to the endpoint URL: "http://169.254.169.254/latest/api/token"
+2025-08-29 13:26:35,869 DEBUG [urllib3.connectionpool] Starting new HTTP connection (2): 169.254.169.254:80
+2025-08-29 13:26:35,871 DEBUG [botocore.utils] Caught retryable HTTP exception while making metadata service request to http://169.254.169.254/latest/meta-data/iam/security-credentials/: Could not connect to the endpoint URL: "http://169.254.169.254/latest/meta-data/iam/security-credentials/"
+Traceback (most recent call last):
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connection.py", line 198, in _new_conn
+    sock = connection.create_connection(
+        (self._dns_host, self.port),
+    ...<2 lines>...
+        socket_options=self.socket_options,
+    )
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\util\connection.py", line 85, in create_connection
+    raise err
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\util\connection.py", line 73, in create_connection
+    sock.connect(sa)
+    ~~~~~~~~~~~~^^^^
+OSError: [WinError 10051] A socket operation was attempted to an unreachable network
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\httpsession.py", line 464, in send
+    urllib_response = conn.urlopen(
+        method=request.method,
+    ...<7 lines>...
+        chunked=self._chunked(request.headers),
+    )
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\util\retry.py", line 449, in increment
+    raise reraise(type(error), error, _stacktrace)
+          ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\util\util.py", line 39, in reraise
+    raise value
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connectionpool.py", line 493, in _make_request
+    conn.request(
+    ~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<6 lines>...
+        enforce_content_length=enforce_content_length,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\awsrequest.py", line 96, in request
+    rval = super().request(method, url, body, headers, *args, **kwargs)
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connection.py", line 445, in request
+    self.endheaders()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\http\client.py", line 1333, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\awsrequest.py", line 123, in _send_output
+    self.send(msg)
+    ~~~~~~~~~^^^^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\awsrequest.py", line 223, in send
+    return super().send(str)
+           ~~~~~~~~~~~~^^^^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\http\client.py", line 1037, in send
+    self.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connection.py", line 276, in connect
+    self.sock = self._new_conn()
+                ~~~~~~~~~~~~~~^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connection.py", line 213, in _new_conn
+    raise NewConnectionError(
+        self, f"Failed to establish a new connection: {e}"
+    ) from e
+urllib3.exceptions.NewConnectionError: <botocore.awsrequest.AWSHTTPConnection object at 0x00000108904B2D50>: Failed to establish a new connection: [WinError 10051] A socket operation was attempted to an unreachable network
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\utils.py", line 518, in _get_request
+    response = self._session.send(request.prepare())
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\httpsession.py", line 493, in send
+    raise EndpointConnectionError(endpoint_url=request.url, error=e)
+botocore.exceptions.EndpointConnectionError: Could not connect to the endpoint URL: "http://169.254.169.254/latest/meta-data/iam/security-credentials/"
+2025-08-29 13:26:35,878 DEBUG [botocore.utils] Max number of attempts exceeded (1) when attempting to retrieve data from metadata service.
+2025-08-29 13:26:35,880 DEBUG [botocore.loaders] Loading JSON file: C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\data\endpoints.json
+2025-08-29 13:26:35,910 DEBUG [botocore.loaders] Loading JSON file: C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\data\sdk-default-configuration.json
+2025-08-29 13:26:35,910 DEBUG [botocore.hooks] Event choose-service-name: calling handler <function handle_service_name_alias at 0x00000108903F2AC0>
+2025-08-29 13:26:35,986 DEBUG [botocore.loaders] Loading JSON file: C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\data\cognito-idp\2016-04-18\service-2.json.gz
+2025-08-29 13:26:36,081 DEBUG [botocore.loaders] Loading JSON file: C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\data\cognito-idp\2016-04-18\endpoint-rule-set-1.json.gz
+2025-08-29 13:26:36,083 DEBUG [botocore.loaders] Loading JSON file: C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\data\partitions.json
+2025-08-29 13:26:36,086 DEBUG [botocore.hooks] Event creating-client-class.cognito-identity-provider: calling handler <function add_generate_presigned_url at 0x0000010890369940>
+2025-08-29 13:26:36,086 DEBUG [botocore.configprovider] Looking for endpoint for cognito-idp via: environment_service
+2025-08-29 13:26:36,087 DEBUG [botocore.configprovider] Looking for endpoint for cognito-idp via: environment_global
+2025-08-29 13:26:36,087 DEBUG [botocore.configprovider] Looking for endpoint for cognito-idp via: config_service
+2025-08-29 13:26:36,088 DEBUG [botocore.configprovider] Looking for endpoint for cognito-idp via: config_global
+2025-08-29 13:26:36,088 DEBUG [botocore.configprovider] No configured endpoint found.
+2025-08-29 13:26:36,090 DEBUG [botocore.endpoint] Setting cognito-idp timeout as (60, 60)
+2025-08-29 13:26:36,093 DEBUG [botocore.loaders] Loading JSON file: C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\data\_retry.json
+2025-08-29 13:26:36,094 DEBUG [botocore.client] Registering retry handlers for service: cognito-idp
+2025-08-29 13:26:36,095 INFO [__main__] Starting authentication process
+2025-08-29 13:26:36,096 DEBUG [botocore.hooks] Event before-parameter-build.cognito-identity-provider.InitiateAuth: calling handler <function generate_idempotent_uuid at 0x00000108903F3100>
+2025-08-29 13:26:36,096 DEBUG [botocore.hooks] Event before-parameter-build.cognito-identity-provider.InitiateAuth: calling handler <function _handle_request_validation_mode_member at 0x0000010890421C60>
+2025-08-29 13:26:36,097 DEBUG [botocore.regions] Calling endpoint provider with parameters: {'Region': 'eu-west-1', 'UseDualStack': False, 'UseFIPS': False}
+2025-08-29 13:26:36,097 DEBUG [botocore.regions] Endpoint provider result: https://cognito-idp.eu-west-1.amazonaws.com
+2025-08-29 13:26:36,098 DEBUG [botocore.hooks] Event before-call.cognito-identity-provider.InitiateAuth: calling handler <function add_recursion_detection_header at 0x00000108903F2CA0>
+2025-08-29 13:26:36,098 DEBUG [botocore.hooks] Event before-call.cognito-identity-provider.InitiateAuth: calling handler <function inject_api_version_header_if_needed at 0x0000010890420C20>
+2025-08-29 13:26:36,099 DEBUG [botocore.endpoint] Making request for OperationModel(name=InitiateAuth) with params: {'url_path': '/', 'query_string': '', 'method': 'POST', 'headers': {'X-Amz-Target': 'AWSCognitoIdentityProviderService.InitiateAuth', 'Content-Type': 'application/x-amz-json-1.1', 'User-Agent': 'Boto3/1.39.3 md/Botocore#1.39.3 ua/2.1 os/windows#11 md/arch#amd64 lang/python#3.13.2 md/pyimpl#CPython m/Z,D,b cfg/retry-mode#legacy Botocore/1.39.3'}, 'body': b'{"ClientId": "g3njunelkcbtefosqm9bdhhq1", "AuthFlow": "USER_PASSWORD_AUTH", "AuthParameters": {"USERNAME": "thomasroager@gmail.com", "PASSWORD": "S0davand!"}}', 'url': 'https://cognito-idp.eu-west-1.amazonaws.com/', 'context': {'client_region': 'eu-west-1', 'client_config': <botocore.config.Config object at 0x00000108904E6510>, 'has_streaming_input': False, 'auth_type': 'none', 'unsigned_payload': None, 'auth_options': ['aws.auth#sigv4']}}
+2025-08-29 13:26:36,100 DEBUG [botocore.hooks] Event request-created.cognito-identity-provider.InitiateAuth: calling handler <bound method RequestSigner.handler of <botocore.signers.RequestSigner object at 0x00000108904E63C0>>
+2025-08-29 13:26:36,100 DEBUG [botocore.hooks] Event choose-signer.cognito-identity-provider.InitiateAuth: calling handler <function set_operation_specific_signer at 0x00000108903F2F20>
+2025-08-29 13:26:36,100 DEBUG [botocore.hooks] Event request-created.cognito-identity-provider.InitiateAuth: calling handler <bound method UserAgentString.rebuild_and_replace_user_agent_handler of <botocore.useragent.UserAgentString object at 0x0000010890F8D810>>
+2025-08-29 13:26:36,101 DEBUG [botocore.hooks] Event request-created.cognito-identity-provider.InitiateAuth: calling handler <function add_retry_headers at 0x00000108904214E0>
+2025-08-29 13:26:36,101 DEBUG [botocore.endpoint] Sending http request: <AWSPreparedRequest stream_output=False, method=POST, url=https://cognito-idp.eu-west-1.amazonaws.com/, headers={'X-Amz-Target': b'AWSCognitoIdentityProviderService.InitiateAuth', 'Content-Type': b'application/x-amz-json-1.1', 'User-Agent': b'Boto3/1.39.3 md/Botocore#1.39.3 ua/2.1 os/windows#11 md/arch#amd64 lang/python#3.13.2 md/pyimpl#CPython m/Z,D,b cfg/retry-mode#legacy Botocore/1.39.3', 'amz-sdk-invocation-id': b'd14c313a-4f7b-4cc2-81d6-511ae614b3ea', 'amz-sdk-request': b'attempt=1', 'Content-Length': '158'}>
+2025-08-29 13:26:36,111 DEBUG [botocore.httpsession] Certificate path: C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\certifi\cacert.pem
+2025-08-29 13:26:36,112 DEBUG [urllib3.connectionpool] Starting new HTTPS connection (1): cognito-idp.eu-west-1.amazonaws.com:443
+2025-08-29 13:26:36,990 DEBUG [urllib3.connectionpool] https://cognito-idp.eu-west-1.amazonaws.com:443 "POST / HTTP/1.1" 200 4703
+2025-08-29 13:26:36,991 DEBUG [botocore.parsers] Response headers: {'Date': 'Fri, 29 Aug 2025 11:26:37 GMT', 'Content-Type': 'application/x-amz-json-1.1', 'Content-Length': '4703', 'Connection': 'keep-alive', 'x-amzn-RequestId': '65b9eb42-b119-414c-af17-a1ec285ba03e'}
+2025-08-29 13:26:36,992 DEBUG [botocore.parsers] Response body:
+b'{"AuthenticationResult":{"AccessToken":"eyJraWQiOiJJRmVQT1hiRU1ZQXZ0VGE0d25aN3llRkxzbFZtckdUYSthWVlwa2pBTTNBPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiIxNzA0ZjI5Ny04NTIwLTQ1ODQtYjE5ZC1mNDk3NDBjNjI3YTgiLCJjb2duaXRvOmdyb3VwcyI6WyJjb25zdW1lciJdLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAuZXUtd2VzdC0xLmFtYXpvbmF3cy5jb21cL2V1LXdlc3QtMV9Pbm9wTVpGOVgiLCJjbGllbnRfaWQiOiJnM25qdW5lbGtjYnRlZm9zcW05YmRoaHExIiwib3JpZ2luX2p0aSI6ImQ4YmQ3YWNjLTkzMzQtNDBhMC05YjI2LTQ0NTJiOTE4ZjczZCIsImV2ZW50X2lkIjoiNjViOWViNDItYjExOS00MTRjLWFmMTctYTFlYzI4NWJhMDNlIiwidG9rZW5fdXNlIjoiYWNjZXNzIiwic2NvcGUiOiJhd3MuY29nbml0by5zaWduaW4udXNlci5hZG1pbiIsImF1dGhfdGltZSI6MTc1NjQ2Njc5NywiZXhwIjoxNzU2NDY3MDk3LCJpYXQiOjE3NTY0NjY3OTcsImp0aSI6ImMzMmU4MGZiLWRjZjktNGRiMC1iZTk2LTc5ODJkMDQwM2U2OCIsInVzZXJuYW1lIjoiMTcwNGYyOTctODUyMC00NTg0LWIxOWQtZjQ5NzQwYzYyN2E4In0.a6FWS2vsEApBPtvZr_7nm17vs2Aww6Y-O8-azNdu9OHVys4v-H-KHDaMEHkbfvfbmFF38KLOVvv3SjzWRTd3kTX-o-PPwPiLotZ4irwP9knBQar29gxO6izr1UqJYxxLdyPSjaeacqBkxdxlwlf6T1r9Yh7l4nONOPWNupKXFV8EZry1r4u9Cm5KyPvNHWIExE9vfmYIIsyJNwIq0VE0jAODhNMf5MKPNYrKlKqTlp-aJ-1jsvZzCzhLVfSoy0NNhuC0_qD9Haq5dAY2W04HkYDUKu46fSWlK4H4h6Y2P5QzjM9vikg2Nsiw1CHhjqj6Zpfp2zy0XQ7B-iEXtn-hxw","ExpiresIn":300,"IdToken":"eyJraWQiOiJ5eHdNYkY5SW51TDUyakdsRjhVMnFIV2pzc2hOTHpDODBzNThDWmdwU044PSIsImFsZyI6IlJTMjU2In0.eyJjdXN0b206dXNlcl9wcmVmZXJlbmNlcyI6IntcImxhbmd1YWdlXCI6XCJlblwiLFwiY291bnRyeVwiOlwiREtcIn0iLCJzdWIiOiIxNzA0ZjI5Ny04NTIwLTQ1ODQtYjE5ZC1mNDk3NDBjNjI3YTgiLCJjb2duaXRvOmdyb3VwcyI6WyJjb25zdW1lciJdLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAuZXUtd2VzdC0xLmFtYXpvbmF3cy5jb21cL2V1LXdlc3QtMV9Pbm9wTVpGOVgiLCJjb2duaXRvOnVzZXJuYW1lIjoiMTcwNGYyOTctODUyMC00NTg0LWIxOWQtZjQ5NzQwYzYyN2E4IiwiZ2l2ZW5fbmFtZSI6IlRob21hcyIsImxvY2FsZSI6ImVuIiwib3JpZ2luX2p0aSI6ImQ4YmQ3YWNjLTkzMzQtNDBhMC05YjI2LTQ0NTJiOTE4ZjczZCIsImF1ZCI6Imczbmp1bmVsa2NidGVmb3NxbTliZGhocTEiLCJldmVudF9pZCI6IjY1YjllYjQyLWIxMTktNDE0Yy1hZjE3LWExZWMyODViYTAzZSIsImN1c3RvbTphY2NlcHRlZF9kb2N1bWVudHMiOiJbe1widHlwZVwiOlwicHJpdmFjeVBvbGljeVwiLFwic2VydmljZVwiOlwibW9iaWxlXCIsXCJjb3VudHJ5XCI6XCJES1wiLFwibGFuZ3VhZ2VcIjpcImVuXCIsXCJ2ZXJzaW9uXCI6XCIwLjAuMVwiLFwicnVudGltZVR5cGVcIjpcImJvZHlcIn0se1widHlwZVwiOlwidGVybXNPZlVzZVwiLFwic2VydmljZVwiOlwibW9iaWxlXCIsXCJjb3VudHJ5XCI6XCJES1wiLFwibGFuZ3VhZ2VcIjpcImVuXCIsXCJ2ZXJzaW9uXCI6XCIwLjAuMVwiLFwicnVudGltZVR5cGVcIjpcImJvZHlcIn1dIiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE3NTY0NjY3OTcsImV4cCI6MTc1NjQ2NzA5NywiaWF0IjoxNzU2NDY2Nzk3LCJmYW1pbHlfbmFtZSI6IlJvYWdlciIsImp0aSI6IjA1YWVjYmI4LTU3NzItNDJlYi05NzUwLWEzMjI1YjU2N2I4NiIsImVtYWlsIjoidGhvbWFzcm9hZ2VyQGdtYWlsLmNvbSJ9.jit6J3DgH2fmOYCGo9_hDa1A0Z0se0NW0yRqnspcxnRn-af09jRWkMxeQ_4mlaHS2Fwh0jjLPnQxZXFU_TNM7YZ0mNPxprJbL3x-BuAzKXmc7KlXHXeWx2nLBb1p679s5wSvyFnC22_o8N2-81s_amAIoE2kIHJzUegC0zEB4RCrE3CrNxzke0d8ZJLuxvan67q4LGAe_jjcuzAKfQ6MyEShfKVRkeq9d_DGnuiDVoXhnfzYN698sAjJPXIw_2TKoOU6-JXUE2q2cvMYHgj7c3NG3M5J6_RfpIQv3T9XKgeHHOurqAZDFH2CAIaaLdMgkB7ncZWba2kxeSky9GmKmQ","RefreshToken":"eyJjdHkiOiJKV1QiLCJlbmMiOiJBMjU2R0NNIiwiYWxnIjoiUlNBLU9BRVAifQ.mg3uyh2-5yEXEuBD9lVntGfhqyOXxvw-FZrAqn0bUJVCJlLyhseb4rNj5O-p_x5QwZJiGwyhH7xlkjdquiHjKLfBbN54xOBuKxMf-kgCAYn7aSaMf9n06UMBsbzgrWTsXfz5er7jq2V0erBs5Uy-iFrUoMfEKuntldlqL9B45sxmcbhqOSTrDwKi7LscLF5GPdCVdc96u0Kq4SU5eT_6sRLHvk8mB1Zk02EeZ_MgFQLbzXiIT_epPYOQzAAYwKdtz6NyVz9hrH0LG7csO6hleilg12bfP1t-kIhcNS1By57PDqSLjZd_ofLbWZTvloSuBHlAPt23BzVlYwmVgOLoPg.awo1svlXtuOVk47c.uGvS5vxtl38j-8v-zCdOZcFCILCPudaKViUGPEeqTmqJgZM9nu5GE1AXLming0Az64ikNlPs46oW7hBQdZxpIZerg8aSD_AHPrnwz2cVPLNLNdSypm3g0a_FQHSQmYi5eus1iUjqiLXOkhVA8Dwlwkw7L205W2iXrnaaOkcKT1vNbmzVWyJECUj6uvP_Zokr9-FWMq6Y073q0vuidFJ7CzQ62Uzw6HLWXS7oGm0dyTiKwiBuCDlewl6rakVmYMrykWa8Dy7Yl9y-mSi5Wik8VoarZmFxLnVZyZc-eRpnFsOGqGcECgpz_mokAdC0Yc8bGYylRiZJfY9sYTV4J1eawQFPE1MY7CiGI_xse3skfQ6bSWI889m-ni6kjTaaXJGhyh_hcmWWtsTM7_c-LgcYoXPsKANG62PVytFaj7S8Gah6kiC-cUnboVtL3CpHXiSciEKzBlonCOY6Q1Kdvnuq7XOK175rtPq7sSROFF1ZKVLC8vd-V7k5fequ2RnFLtsHlpg4VTwYHsD1zSfPmxBRab9G-2rwmPnvSi3QYnNpfRFH9nop3cQ0XFZHe5xLTyYqTh4TfYN4Xcdy4ROvOipBVQyxkjA5QM4LLtPNL_DYhkEdc1nAugxVkwQQ2W4sTm_uiKxN28Zz6-vbAHejJpg31PAciKRDYvrfVN88-0WdX0yN66lXYEc_Q-E8BRYqYL_nFIFJieGGjlQ_0RlxjTaFAObusw7Mve-daiX-pLepvTTQCHQH065kR2eWxsE9okzNjh4IjVXXnjF3J361Liaq1dsipMJGoLNxn6o6r0SUSkrD8oZBPIizil-wW0Txtn_w1exoCSQdYwQ2LR1HntcfOV6t_VKT6_XEAHRQzz5YbShptbKsadaxEjkqmFVfId2ILoGtsfG7QyBbjLXR9O-jal1aicWFQrlDrUcesoELybyqjPM4HiJ_3crZzjF-IxIC8YRU1L3Olp-OQlME4itb1ni54SUcwiZaMg8lH8CMypj00s0HcM3HMWW-CfRh5rWrDDIkgjwGmjKfBuhAlwWInq0uchwJdnrNz4OIbETmvW7wUGafIgU5mbXS1NzWFcZfhF2h521z3j5OiYMGsY44tnOGUDK1gitEC8OYnWzPg51ulLsrROWRugCYEub55Ehm3ud5vU884f1DzEnySLrBVt0i_6UFLYBHug9-_OsgGPsPSCAgX00YRzwOZjkDkqqK3IjAvhF4fAanDlqbf7FSYwvaATjdlC6UaTxPdZv0nf0_9JCtJXBu26_XBsc3x_X4WXYZGqKFKULo9Lr-VknFNo8SCGzk5fmer_3qUaOe2F2Lj60LesrN5lzO.qavWmpOgC3eSLXxGfn-d1w","TokenType":"Bearer"},"ChallengeParameters":{}}'
+2025-08-29 13:26:36,993 DEBUG [botocore.hooks] Event needs-retry.cognito-identity-provider.InitiateAuth: calling handler <botocore.retryhandler.RetryHandler object at 0x0000010890DF81A0>
+2025-08-29 13:26:36,994 DEBUG [botocore.retryhandler] No retry needed.
+2025-08-29 13:26:36,994 INFO [__main__] Authentication successful
+2025-08-29 13:26:36,996 INFO [__main__] Successfully authenticated with Fluidra Pool API
+2025-08-29 13:26:36,997 DEBUG [__main__] Access token: eyJraWQiOi...-iEXtn-hxw
+2025-08-29 13:26:36,997 INFO [__main__] Enhanced authentication successful!
+2025-08-29 13:26:36,997 DEBUG [__main__] Using enhanced headers: {'Authorization': '****', 'Content-Type': 'application/json', 'Accept': 'application/json', 'x-api-key': '****', 'x-access-token': '****', 'User-Agent': 'Fluidra/1.0'}
+2025-08-29 13:26:36,997 INFO [__main__] 
+Testing Consumer data...
+2025-08-29 13:26:36,998 INFO [__main__] Resolving DNS for api.fluidra-emea.com...
+2025-08-29 13:26:36,999 INFO [__main__] Successfully resolved api.fluidra-emea.com to 45.60.80.124
+2025-08-29 13:26:36,999 INFO [__main__] Testing endpoint: https://api.fluidra-emea.com/mobile/consumers/me
+2025-08-29 13:26:37,658 INFO [__main__] Response status: 200
+2025-08-29 13:26:37,658 INFO [__main__] Request successful!
+2025-08-29 13:26:37,659 INFO [__main__] Consumer data response data: {'id': 'CONSUMER#1704f297-8520-4584-b19d-f49740c627a8', 'cognitoId': '1704f297-8520-4584-b19d-f49740c627a8', 'email': 'thomasroager@gmail.com', 'name': {'firstName': 'Thomas', 'lastName': 'Roager'}, 'created': '2025-06-05T18:05:12.390Z', 'preferences': {'country': 'DK', 'notifications': {'recommendations': {'email': False, 'push': False}, 'information': {'email': False, 'push': False}, 'productNews': {'email': False, 'push': False}}, 'language': 'en'}, 'consents': {'latest': []}}
+2025-08-29 13:26:37,659 INFO [__main__] Consumer data test successful!
+2025-08-29 13:26:37,660 INFO [__main__] 
+Testing Devices data...
+2025-08-29 13:26:37,660 INFO [__main__] Resolving DNS for api.fluidra-emea.com...
+2025-08-29 13:26:37,661 INFO [__main__] Successfully resolved api.fluidra-emea.com to 45.60.80.124
+2025-08-29 13:26:37,661 INFO [__main__] Testing endpoint: https://api.fluidra-emea.com/generic/devices
+2025-08-29 13:26:38,540 INFO [__main__] Response status: 200
+2025-08-29 13:26:38,541 INFO [__main__] Request successful!
+2025-08-29 13:26:38,542 INFO [__main__] Devices data response data: [{'id': 'LG24440781', 'info': {'name': 'Inverter Heat Pumps by Swim & Fun', 'configFileVersion': '0.0.2', 'family': 'Heat Pumps', 'configuration': {'capabilities': {'postLinkingSteps': ['poolDetails'], 'provisioning': {'ble': {'preDiscoveryScreen': {'description': {'default': 'Choose the combination according to your equipment and press the buttons for a few seconds until "SET" or the Wi-Fi icon starts flashing.', 'i18n': {'key': 'equipment_add_bluetooth_amitime'}}, 'image': {'svg': '<svg width="324" height="331" viewBox="0 0 324 331" fill="none" xmlns="http://www.w3.org/2000/svg"><circle opacity="0.1" cx="71.5" cy="70.5" r="70.5" fill="#7F4BF1"/><path fill-rule="evenodd" clip-rule="evenodd" d="M80.6082 44.7626L58.7507 67.5939C58.2698 68.101 58 68.786 58 69.5C58 70.214 58.2698 70.8991 58.7507 71.4062L80.6082 94.2375C81.0979 94.7269 81.7495 95 82.4271 95C83.1048 95 83.7563 94.7269 84.2461 94.2375C84.4851 93.988 84.6746 93.6917 84.804 93.3655C84.9334 93.0393 85 92.6897 85 92.3366C85 91.9836 84.9334 91.6339 84.804 91.3078C84.6746 90.9816 84.4851 90.6853 84.2461 90.4358L64.2076 69.4947L84.2461 48.5642C84.4851 48.3147 84.6746 48.0184 84.804 47.6922C84.9334 47.3661 85 47.0164 85 46.6634C85 46.3103 84.9334 45.9607 84.804 45.6345C84.6746 45.3083 84.4851 45.0121 84.2461 44.7626C83.7563 44.2732 83.1047 44 82.4271 44C81.7495 44 81.0979 44.2732 80.6082 44.7626Z" fill="#7F4BF1"/><path d="M166.037 71.28C166.103 71.28 166.157 71.3067 166.197 71.36C166.25 71.4 166.277 71.4533 166.277 71.52V73.46C166.277 73.5267 166.25 73.5867 166.197 73.64C166.157 73.68 166.103 73.7 166.037 73.7H163.297C163.23 73.7 163.197 73.7333 163.197 73.8V76.5C163.197 76.5667 163.17 76.6267 163.117 76.68C163.077 76.72 163.023 76.74 162.957 76.74H161.037C160.97 76.74 160.91 76.72 160.857 76.68C160.817 76.6267 160.797 76.5667 160.797 76.5V73.8C160.797 73.7333 160.763 73.7 160.697 73.7H157.957C157.89 73.7 157.83 73.68 157.777 73.64C157.737 73.5867 157.717 73.5267 157.717 73.46V71.52C157.717 71.4533 157.737 71.4 157.777 71.36C157.83 71.3067 157.89 71.28 157.957 71.28H160.697C160.763 71.28 160.797 71.2467 160.797 71.18V68.42C160.797 68.3533 160.817 68.3 160.857 68.26C160.91 68.2067 160.97 68.18 161.037 68.18H162.957C163.023 68.18 163.077 68.2067 163.117 68.26C163.17 68.3 163.197 68.3533 163.197 68.42V71.18C163.197 71.2467 163.23 71.28 163.297 71.28H166.037Z" fill="#7F4BF1"/><circle opacity="0.1" cx="252.5" cy="70.5" r="70.5" fill="#7F4BF1"/><path d="M229.225 84.32C227.171 84.32 225.385 84 223.865 83.36C222.371 82.72 221.211 81.8133 220.385 80.64C219.585 79.4667 219.185 78.0933 219.185 76.52V75.36C219.185 75.0933 219.318 74.96 219.585 74.96H222.505C222.771 74.96 222.905 75.0933 222.905 75.36V76.32C222.905 77.68 223.491 78.8 224.665 79.68C225.838 80.56 227.451 81 229.505 81C231.345 81 232.731 80.6133 233.665 79.84C234.598 79.0667 235.065 78.0533 235.065 76.8C235.065 75.9733 234.825 75.2667 234.345 74.68C233.865 74.0933 233.158 73.56 232.225 73.08C231.318 72.5733 229.985 71.9733 228.225 71.28C226.278 70.5333 224.731 69.8533 223.585 69.24C222.465 68.6267 221.531 67.8267 220.785 66.84C220.038 65.8267 219.665 64.56 219.665 63.04C219.665 60.7467 220.478 58.9467 222.105 57.64C223.758 56.3333 225.985 55.68 228.785 55.68C230.758 55.68 232.491 56.0133 233.985 56.68C235.478 57.3467 236.625 58.28 237.425 59.48C238.251 60.68 238.665 62.0667 238.665 63.64V64.44C238.665 64.7067 238.531 64.84 238.265 64.84H235.265C234.998 64.84 234.865 64.7067 234.865 64.44V63.84C234.865 62.4533 234.305 61.3067 233.185 60.4C232.091 59.4667 230.571 59 228.625 59C226.971 59 225.691 59.3467 224.785 60.04C223.878 60.7067 223.425 61.68 223.425 62.96C223.425 63.84 223.651 64.56 224.105 65.12C224.558 65.68 225.225 66.1867 226.105 66.64C227.011 67.0667 228.385 67.6267 230.225 68.32C232.118 69.0667 233.651 69.76 234.825 70.4C235.998 71.0133 236.971 71.84 237.745 72.88C238.518 73.8933 238.905 75.16 238.905 76.68C238.905 79.0267 238.038 80.8933 236.305 82.28C234.598 83.64 232.238 84.32 229.225 84.32ZM262.7 58.92C262.7 59.1867 262.567 59.32 262.3 59.32H248.1C247.994 59.32 247.94 59.3733 247.94 59.48V68.08C247.94 68.1867 247.994 68.24 248.1 68.24H257.86C258.127 68.24 258.26 68.3733 258.26 68.64V71.16C258.26 71.4267 258.127 71.56 257.86 71.56H248.1C247.994 71.56 247.94 71.6133 247.94 71.72V80.52C247.94 80.6267 247.994 80.68 248.1 80.68H262.3C262.567 80.68 262.7 80.8133 262.7 81.08V83.6C262.7 83.8667 262.567 84 262.3 84H244.5C244.234 84 244.1 83.8667 244.1 83.6V56.4C244.1 56.1333 244.234 56 244.5 56H262.3C262.567 56 262.7 56.1333 262.7 56.4V58.92ZM285.807 56C286.073 56 286.207 56.1333 286.207 56.4V58.96C286.207 59.2267 286.073 59.36 285.807 59.36H278.127C278.02 59.36 277.967 59.4133 277.967 59.52V83.6C277.967 83.8667 277.833 84 277.567 84H274.527C274.26 84 274.127 83.8667 274.127 83.6V59.52C274.127 59.4133 274.073 59.36 273.967 59.36H266.647C266.38 59.36 266.247 59.2267 266.247 58.96V56.4C266.247 56.1333 266.38 56 266.647 56H285.807Z" fill="#7F4BF1"/><circle opacity="0.1" cx="71.5" cy="260.5" r="70.5" fill="#7F4BF1"/><path d="M72 235.75C70.5792 235.75 69.4167 236.912 69.4167 238.333V259C69.4167 260.421 70.5792 261.583 72 261.583C73.4208 261.583 74.5833 260.421 74.5833 259V238.333C74.5833 236.912 73.4208 235.75 72 235.75ZM85.2783 243.138C84.2708 244.146 84.2967 245.722 85.2525 246.729C88.1717 249.829 89.98 253.962 90.0833 258.535C90.3158 268.429 82.1267 276.954 72.2325 277.057C62.1317 277.212 53.9167 269.075 53.9167 259C53.9167 254.247 55.7508 249.932 58.7475 246.703C59.7033 245.696 59.7033 244.12 58.7217 243.138C57.6883 242.105 56.0092 242.131 55.0275 243.19C51.2817 247.168 48.9308 252.464 48.75 258.328C48.3883 270.935 58.6442 281.837 71.2508 282.224C84.4258 282.637 95.25 272.072 95.25 258.974C95.25 252.852 92.8733 247.323 88.9983 243.19C88.0167 242.131 86.3117 242.105 85.2783 243.138Z" fill="#7F4BF1"/><path d="M166.037 261.28C166.103 261.28 166.157 261.307 166.197 261.36C166.25 261.4 166.277 261.453 166.277 261.52V263.46C166.277 263.527 166.25 263.587 166.197 263.64C166.157 263.68 166.103 263.7 166.037 263.7H163.297C163.23 263.7 163.197 263.733 163.197 263.8V266.5C163.197 266.567 163.17 266.627 163.117 266.68C163.077 266.72 163.023 266.74 162.957 266.74H161.037C160.97 266.74 160.91 266.72 160.857 266.68C160.817 266.627 160.797 266.567 160.797 266.5V263.8C160.797 263.733 160.763 263.7 160.697 263.7H157.957C157.89 263.7 157.83 263.68 157.777 263.64C157.737 263.587 157.717 263.527 157.717 263.46V261.52C157.717 261.453 157.737 261.4 157.777 261.36C157.83 261.307 157.89 261.28 157.957 261.28H160.697C160.763 261.28 160.797 261.247 160.797 261.18V258.42C160.797 258.353 160.817 258.3 160.857 258.26C160.91 258.207 160.97 258.18 161.037 258.18H162.957C163.023 258.18 163.077 258.207 163.117 258.26C163.17 258.3 163.197 258.353 163.197 258.42V261.18C163.197 261.247 163.23 261.28 163.297 261.28H166.037Z" fill="#7F4BF1"/><circle opacity="0.1" cx="252.5" cy="260.5" r="70.5" fill="#7F4BF1"/><path fill-rule="evenodd" clip-rule="evenodd" d="M277.237 268.608L254.406 246.751C253.899 246.27 253.214 246 252.5 246C251.786 246 251.101 246.27 250.594 246.751L227.762 268.608C227.273 269.098 227 269.749 227 270.427C227 271.105 227.273 271.756 227.762 272.246C228.012 272.485 228.308 272.675 228.634 272.804C228.961 272.933 229.31 273 229.663 273C230.016 273 230.366 272.933 230.692 272.804C231.018 272.675 231.315 272.485 231.564 272.246L252.505 252.208L273.436 272.246C273.685 272.485 273.982 272.675 274.308 272.804C274.634 272.933 274.984 273 275.337 273C275.69 273 276.039 272.933 276.366 272.804C276.692 272.675 276.988 272.485 277.237 272.246C277.727 271.756 278 271.105 278 270.427C278 269.749 277.727 269.098 277.237 268.608Z" fill="#7F4BF1"/><rect y="164" width="324" height="1" rx="0.5" fill="#E1E6EF"/></svg>'}, 'dynamicImage': {'width': 1, 'id': 1, 'type': 'fraction', 'content': '<svg width="324" height="331" viewBox="0 0 324 331" fill="none" xmlns="http://www.w3.org/2000/svg"><circle opacity="0.1" cx="71.5" cy="70.5" r="70.5" fill="#7F4BF1"/><path fill-rule="evenodd" clip-rule="evenodd" d="M80.6082 44.7626L58.7507 67.5939C58.2698 68.101 58 68.786 58 69.5C58 70.214 58.2698 70.8991 58.7507 71.4062L80.6082 94.2375C81.0979 94.7269 81.7495 95 82.4271 95C83.1048 95 83.7563 94.7269 84.2461 94.2375C84.4851 93.988 84.6746 93.6917 84.804 93.3655C84.9334 93.0393 85 92.6897 85 92.3366C85 91.9836 84.9334 91.6339 84.804 91.3078C84.6746 90.9816 84.4851 90.6853 84.2461 90.4358L64.2076 69.4947L84.2461 48.5642C84.4851 48.3147 84.6746 48.0184 84.804 47.6922C84.9334 47.3661 85 47.0164 85 46.6634C85 46.3103 84.9334 45.9607 84.804 45.6345C84.6746 45.3083 84.4851 45.0121 84.2461 44.7626C83.7563 44.2732 83.1047 44 82.4271 44C81.7495 44 81.0979 44.2732 80.6082 44.7626Z" fill="#7F4BF1"/><path d="M166.037 71.28C166.103 71.28 166.157 71.3067 166.197 71.36C166.25 71.4 166.277 71.4533 166.277 71.52V73.46C166.277 73.5267 166.25 73.5867 166.197 73.64C166.157 73.68 166.103 73.7 166.037 73.7H163.297C163.23 73.7 163.197 73.7333 163.197 73.8V76.5C163.197 76.5667 163.17 76.6267 163.117 76.68C163.077 76.72 163.023 76.74 162.957 76.74H161.037C160.97 76.74 160.91 76.72 160.857 76.68C160.817 76.6267 160.797 76.5667 160.797 76.5V73.8C160.797 73.7333 160.763 73.7 160.697 73.7H157.957C157.89 73.7 157.83 73.68 157.777 73.64C157.737 73.5867 157.717 73.5267 157.717 73.46V71.52C157.717 71.4533 157.737 71.4 157.777 71.36C157.83 71.3067 157.89 71.28 157.957 71.28H160.697C160.763 71.28 160.797 71.2467 160.797 71.18V68.42C160.797 68.3533 160.817 68.3 160.857 68.26C160.91 68.2067 160.97 68.18 161.037 68.18H162.957C163.023 68.18 163.077 68.2067 163.117 68.26C163.17 68.3 163.197 68.3533 163.197 68.42V71.18C163.197 71.2467 163.23 71.28 163.297 71.28H166.037Z" fill="#7F4BF1"/><circle opacity="0.1" cx="252.5" cy="70.5" r="70.5" fill="#7F4BF1"/><path d="M229.225 84.32C227.171 84.32 225.385 84 223.865 83.36C222.371 82.72 221.211 81.8133 220.385 80.64C219.585 79.4667 219.185 78.0933 219.185 76.52V75.36C219.185 75.0933 219.318 74.96 219.585 74.96H222.505C222.771 74.96 222.905 75.0933 222.905 75.36V76.32C222.905 77.68 223.491 78.8 224.665 79.68C225.838 80.56 227.451 81 229.505 81C231.345 81 232.731 80.6133 233.665 79.84C234.598 79.0667 235.065 78.0533 235.065 76.8C235.065 75.9733 234.825 75.2667 234.345 74.68C233.865 74.0933 233.158 73.56 232.225 73.08C231.318 72.5733 229.985 71.9733 228.225 71.28C226.278 70.5333 224.731 69.8533 223.585 69.24C222.465 68.6267 221.531 67.8267 220.785 66.84C220.038 65.8267 219.665 64.56 219.665 63.04C219.665 60.7467 220.478 58.9467 222.105 57.64C223.758 56.3333 225.985 55.68 228.785 55.68C230.758 55.68 232.491 56.0133 233.985 56.68C235.478 57.3467 236.625 58.28 237.425 59.48C238.251 60.68 238.665 62.0667 238.665 63.64V64.44C238.665 64.7067 238.531 64.84 238.265 64.84H235.265C234.998 64.84 234.865 64.7067 234.865 64.44V63.84C234.865 62.4533 234.305 61.3067 233.185 60.4C232.091 59.4667 230.571 59 228.625 59C226.971 59 225.691 59.3467 224.785 60.04C223.878 60.7067 223.425 61.68 223.425 62.96C223.425 63.84 223.651 64.56 224.105 65.12C224.558 65.68 225.225 66.1867 226.105 66.64C227.011 67.0667 228.385 67.6267 230.225 68.32C232.118 69.0667 233.651 69.76 234.825 70.4C235.998 71.0133 236.971 71.84 237.745 72.88C238.518 73.8933 238.905 75.16 238.905 76.68C238.905 79.0267 238.038 80.8933 236.305 82.28C234.598 83.64 232.238 84.32 229.225 84.32ZM262.7 58.92C262.7 59.1867 262.567 59.32 262.3 59.32H248.1C247.994 59.32 247.94 59.3733 247.94 59.48V68.08C247.94 68.1867 247.994 68.24 248.1 68.24H257.86C258.127 68.24 258.26 68.3733 258.26 68.64V71.16C258.26 71.4267 258.127 71.56 257.86 71.56H248.1C247.994 71.56 247.94 71.6133 247.94 71.72V80.52C247.94 80.6267 247.994 80.68 248.1 80.68H262.3C262.567 80.68 262.7 80.8133 262.7 81.08V83.6C262.7 83.8667 262.567 84 262.3 84H244.5C244.234 84 244.1 83.8667 244.1 83.6V56.4C244.1 56.1333 244.234 56 244.5 56H262.3C262.567 56 262.7 56.1333 262.7 56.4V58.92ZM285.807 56C286.073 56 286.207 56.1333 286.207 56.4V58.96C286.207 59.2267 286.073 59.36 285.807 59.36H278.127C278.02 59.36 277.967 59.4133 277.967 59.52V83.6C277.967 83.8667 277.833 84 277.567 84H274.527C274.26 84 274.127 83.8667 274.127 83.6V59.52C274.127 59.4133 274.073 59.36 273.967 59.36H266.647C266.38 59.36 266.247 59.2267 266.247 58.96V56.4C266.247 56.1333 266.38 56 266.647 56H285.807Z" fill="#7F4BF1"/><circle opacity="0.1" cx="71.5" cy="260.5" r="70.5" fill="#7F4BF1"/><path d="M72 235.75C70.5792 235.75 69.4167 236.912 69.4167 238.333V259C69.4167 260.421 70.5792 261.583 72 261.583C73.4208 261.583 74.5833 260.421 74.5833 259V238.333C74.5833 236.912 73.4208 235.75 72 235.75ZM85.2783 243.138C84.2708 244.146 84.2967 245.722 85.2525 246.729C88.1717 249.829 89.98 253.962 90.0833 258.535C90.3158 268.429 82.1267 276.954 72.2325 277.057C62.1317 277.212 53.9167 269.075 53.9167 259C53.9167 254.247 55.7508 249.932 58.7475 246.703C59.7033 245.696 59.7033 244.12 58.7217 243.138C57.6883 242.105 56.0092 242.131 55.0275 243.19C51.2817 247.168 48.9308 252.464 48.75 258.328C48.3883 270.935 58.6442 281.837 71.2508 282.224C84.4258 282.637 95.25 272.072 95.25 258.974C95.25 252.852 92.8733 247.323 88.9983 243.19C88.0167 242.131 86.3117 242.105 85.2783 243.138Z" fill="#7F4BF1"/><path d="M166.037 261.28C166.103 261.28 166.157 261.307 166.197 261.36C166.25 261.4 166.277 261.453 166.277 261.52V263.46C166.277 263.527 166.25 263.587 166.197 263.64C166.157 263.68 166.103 263.7 166.037 263.7H163.297C163.23 263.7 163.197 263.733 163.197 263.8V266.5C163.197 266.567 163.17 266.627 163.117 266.68C163.077 266.72 163.023 266.74 162.957 266.74H161.037C160.97 266.74 160.91 266.72 160.857 266.68C160.817 266.627 160.797 266.567 160.797 266.5V263.8C160.797 263.733 160.763 263.7 160.697 263.7H157.957C157.89 263.7 157.83 263.68 157.777 263.64C157.737 263.587 157.717 263.527 157.717 263.46V261.52C157.717 261.453 157.737 261.4 157.777 261.36C157.83 261.307 157.89 261.28 157.957 261.28H160.697C160.763 261.28 160.797 261.247 160.797 261.18V258.42C160.797 258.353 160.817 258.3 160.857 258.26C160.91 258.207 160.97 258.18 161.037 258.18H162.957C163.023 258.18 163.077 258.207 163.117 258.26C163.17 258.3 163.197 258.353 163.197 258.42V261.18C163.197 261.247 163.23 261.28 163.297 261.28H166.037Z" fill="#7F4BF1"/><circle opacity="0.1" cx="252.5" cy="260.5" r="70.5" fill="#7F4BF1"/><path fill-rule="evenodd" clip-rule="evenodd" d="M277.237 268.608L254.406 246.751C253.899 246.27 253.214 246 252.5 246C251.786 246 251.101 246.27 250.594 246.751L227.762 268.608C227.273 269.098 227 269.749 227 270.427C227 271.105 227.273 271.756 227.762 272.246C228.012 272.485 228.308 272.675 228.634 272.804C228.961 272.933 229.31 273 229.663 273C230.016 273 230.366 272.933 230.692 272.804C231.018 272.675 231.315 272.485 231.564 272.246L252.505 252.208L273.436 272.246C273.685 272.485 273.982 272.675 274.308 272.804C274.634 272.933 274.984 273 275.337 273C275.69 273 276.039 272.933 276.366 272.804C276.692 272.675 276.988 272.485 277.237 272.246C277.727 271.756 278 271.105 278 270.427C278 269.749 277.727 269.098 277.237 268.608Z" fill="#7F4BF1"/><rect y="164" width="324" height="1" rx="0.5" fill="#E1E6EF"/></svg>', 'height': 1}}, 'protocol': 'SPP', 'preDiscoveryInfo': 'none', 'pairingMode': 'auto', 'info': {'rxUuid': '54c4dfef-4e04-4c42-9c33-06a6af86280c', 'txUuid': '760f6551-4156-4829-8bcc-62591b1eb948', 'serviceUuid': '4e7763c4-211b-47b8-88df-cd869df32c48'}}}}}, 'manuals': [{'lang': 'fr', 'type': 'usermanual', 'url': 'https://asset.productmarketingcloud.com/api/assetstorage/3096_179bb443-7236-4bdc-a341-ada3736e7a65'}, {'lang': 'en', 'type': 'usermanual', 'url': 'https://asset.productmarketingcloud.com/api/assetstorage/3096_179bb443-7236-4bdc-a341-ada3736e7a65'}, {'lang': 'de', 'type': 'usermanual', 'url': 'https://asset.productmarketingcloud.com/api/assetstorage/3096_179bb443-7236-4bdc-a341-ada3736e7a65'}, {'lang': 'nl', 'type': 'usermanual', 'url': 'https://asset.productmarketingcloud.com/api/assetstorage/3096_179bb443-7236-4bdc-a341-ada3736e7a65'}, {'lang': 'es', 'type': 'usermanual', 'url': 'https://asset.productmarketingcloud.com/api/assetstorage/3096_179bb443-7236-4bdc-a341-ada3736e7a65'}, {'lang': 'pt', 'type': 'usermanual', 'url': 'https://asset.productmarketingcloud.com/api/assetstorage/3096_179bb443-7236-4bdc-a341-ada3736e7a65'}, {'lang': 'it', 'type': 'usermanual', 'url': 'https://asset.productmarketingcloud.com/api/assetstorage/3096_179bb443-7236-4bdc-a341-ada3736e7a65'}, {'lang': 'pl', 'type': 'usermanual', 'url': 'https://asset.productmarketingcloud.com/api/assetstorage/3096_179bb443-7236-4bdc-a341-ada3736e7a65'}, {'lang': 'cs', 'type': 'usermanual', 'url': 'https://asset.productmarketingcloud.com/api/assetstorage/3096_179bb443-7236-4bdc-a341-ada3736e7a65'}, {'lang': 'el', 'type': 'usermanual', 'url': 'https://asset.productmarketingcloud.com/api/assetstorage/3096_179bb443-7236-4bdc-a341-ada3736e7a65'}, {'lang': 'sv', 'type': 'usermanual', 'url': 'https://asset.productmarketingcloud.com/api/assetstorage/3096_179bb443-7236-4bdc-a341-ada3736e7a65'}]}, 'type': 'connected', 'connectivity': {'connected': True, 'sessionIdentifier': '98361079-81bd-4652-a48c-37cebc3646be', 'timestamp': 1756209365321}, 'poolId': '6cfd9bc9-09e8-547d-9f5a-0274c170a915', 'sku': '1441', 'vr': '2.5.0', 'firstConnection': 1751394264088, 'alarms': [], 'sn': 'LG24440781', 'thingType': 'amt'}]
+2025-08-29 13:26:38,544 INFO [__main__] Devices data test successful!
+2025-08-29 13:26:38,545 INFO [__main__] 
+Testing Device Components for device: LG24440781
+2025-08-29 13:26:38,545 INFO [__main__] Resolving DNS for api.fluidra-emea.com...
+2025-08-29 13:26:38,557 INFO [__main__] Successfully resolved api.fluidra-emea.com to 45.60.80.124
+2025-08-29 13:26:38,558 INFO [__main__] Testing endpoint: https://api.fluidra-emea.com/generic/devices/LG24440781/components?deviceType=connected
+2025-08-29 13:26:39,104 INFO [__main__] Response status: 200
+2025-08-29 13:26:39,104 INFO [__main__] Request successful!
+2025-08-29 13:26:39,105 INFO [__main__] Device Components response data: [{'id': 11, 'reportedValue': 1, 'ts': 1756209367}, {'id': 12, 'reportedValue': 1756209365, 'ts': 1756209367}, {'id': 13, 'reportedValue': 0, 'ts': 1756108155}, {'id': 14, 'reportedValue': 2, 'ts': 1756060029}, {'id': 15, 'reportedValue': 300, 'ts': 1756060117}, {'id': 16, 'reportedValue': 2, 'ts': 1756209367}, {'id': 17, 'reportedValue': 0, 'ts': 1755936513}, {'id': 18, 'reportedValue': 0, 'ts': 1755936513}, {'id': 19, 'reportedValue': 228, 'ts': 1756465840}, {'id': 20, 'reportedValue': 0, 'ts': 1755936513}, {'id': 21, 'reportedValue': 0, 'ts': 1755936513}, {'id': 22, 'reportedValue': 0, 'ts': 1755936513}, {'id': 23, 'reportedValue': 0, 'ts': 1755936513}, {'id': 24, 'reportedValue': 0, 'ts': 1755936513}, {'id': 25, 'reportedValue': 0, 'ts': 1755936513}, {'id': 26, 'reportedValue': 0, 'ts': 1755936513}, {'id': 27, 'reportedValue': 0, 'ts': 1755936513}, {'id': 28, 'reportedValue': 0, 'ts': 1756439200}, {'id': 29, 'reportedValue': 0, 'ts': 1755936513}, {'id': 30, 'reportedValue': 0, 'ts': 1755936513}, {'id': 31, 'reportedValue': 0, 'ts': 1755936513}, {'id': 32, 'reportedValue': 0, 'ts': 1755936513}, {'id': 33, 'reportedValue': 0, 'ts': 1755936513}, {'id': 34, 'reportedValue': 0, 'ts': 1755936513}, {'id': 35, 'reportedValue': 0, 'ts': 1755936513}, {'id': 36, 'reportedValue': 0, 'ts': 1755936513}, {'id': 37, 'reportedValue': 0, 'ts': 1755936513}, {'id': 38, 'reportedValue': 0, 'ts': 1755936513}, {'id': 39, 'reportedValue': 0, 'ts': 1755936513}, {'id': 40, 'reportedValue': 0, 'ts': 1755936513}, {'id': 41, 'reportedValue': 0, 'ts': 1755936513}, {'id': 42, 'reportedValue': 0, 'ts': 1755936513}, {'id': 43, 'reportedValue': 0, 'ts': 1755936513}, {'id': 44, 'reportedValue': 0, 'ts': 1755936513}, {'id': 45, 'reportedValue': 0, 'ts': 1755936513}, {'id': 46, 'reportedValue': 0, 'ts': 1755936513}, {'id': 47, 'reportedValue': 0, 'ts': 1755936513}, {'id': 48, 'reportedValue': 0, 'ts': 1755936513}, {'id': 49, 'reportedValue': 0, 'ts': 1755936513}, {'id': 50, 'reportedValue': 0, 'ts': 1755936513}, {'id': 51, 'reportedValue': 0, 'ts': 1755936513}, {'id': 52, 'reportedValue': 0, 'ts': 1755936513}, {'id': 53, 'reportedValue': 0, 'ts': 1755936513}, {'id': 54, 'reportedValue': 0, 'ts': 1755936513}, {'id': 55, 'reportedValue': 0, 'ts': 1755936513}, {'id': 56, 'reportedValue': 0, 'ts': 1755936513}, {'id': 57, 'reportedValue': 0, 'ts': 1755936514}, {'id': 58, 'reportedValue': 0, 'ts': 1755936514}, {'id': 59, 'reportedValue': 0, 'ts': 1755936514}, {'id': 60, 'reportedValue': 0, 'ts': 1756108177}, {'id': 61, 'reportedValue': 0, 'ts': 1756108177}, {'id': 62, 'reportedValue': 340, 'ts': 1756451500}, {'id': 63, 'reportedValue': 0, 'ts': 1755936514}, {'id': 64, 'reportedValue': 0, 'ts': 1756135539}, {'id': 65, 'reportedValue': 230, 'ts': 1756466740}, {'id': 66, 'reportedValue': 216, 'ts': 1756466500}, {'id': 67, 'reportedValue': 263, 'ts': 1756466621}, {'id': 68, 'reportedValue': 228, 'ts': 1756465840}, {'id': 69, 'reportedValue': 230, 'ts': 1756466381}, {'id': 70, 'reportedValue': 227, 'ts': 1756466621}, {'id': 71, 'reportedValue': 0, 'ts': 1755936514}, {'id': 72, 'reportedValue': 130, 'ts': 1756466561}, {'id': 73, 'reportedValue': 3, 'ts': 1756108179}, {'id': 74, 'reportedValue': 224, 'ts': 1756466741}, {'id': 75, 'reportedValue': 0, 'ts': 1756466081}, {'id': 76, 'reportedValue': 317, 'ts': 1756466741}, {'id': 77, 'reportedValue': 0, 'ts': 1756108179}, {'id': 78, 'reportedValue': 11, 'ts': 1755936514}, {'id': 79, 'reportedValue': 14, 'ts': 1755936514}, {'id': 80, 'reportedValue': 2, 'ts': 1756439200}, {'id': 81, 'reportedValue': 7, 'ts': 1756060030}, {'id': 82, 'reportedValue': 40, 'ts': 1751576712}, {'id': 0, 'reportedValue': 356, 'ts': 1756107721}, {'id': 1, 'reportedValue': -82, 'ts': 1756465085}, {'id': 2, 'reportedValue': '192.168.1.11', 'ts': 1756466621}, {'id': 3, 'reportedValue': 'LG24440781', 'ts': 1756107721}, {'id': 4, 'reportedValue': '2.5.0', 'ts': 1756107721}, {'id': 5, 'reportedValue': 'amt', 'ts': 1756107721}, {'id': 6, 'reportedValue': '1441', 'ts': 1756107721}, {'id': 7, 'reportedValue': 'BXWAB0603494724050', 'ts': 1756107721}, {'id': 8, 'reportedValue': None}, {'id': 9, 'reportedValue': '', 'ts': 1756107721}, {'id': 10, 'reportedValue': [{'p': 'nn', 'id': 'nn_1'}]}]
+2025-08-29 13:26:39,105 INFO [__main__] Device Components test successful!
+2025-08-29 13:26:39,106 INFO [__main__] 
+Testing Device UI Config for device: LG24440781
+2025-08-29 13:26:39,106 INFO [__main__] Resolving DNS for api.fluidra-emea.com...
+2025-08-29 13:26:39,108 INFO [__main__] Successfully resolved api.fluidra-emea.com to 45.60.80.124
+2025-08-29 13:26:39,109 INFO [__main__] Testing endpoint: https://api.fluidra-emea.com/generic/devices/LG24440781/uiconfig?appId=iaq&deviceType=connected
+2025-08-29 13:26:39,756 INFO [__main__] Response status: 200
+2025-08-29 13:26:39,757 INFO [__main__] Request successful!
+2025-08-29 13:26:39,758 INFO [__main__] Device UI Config response data: {'name': 'iAqualink+', 'id': 'iaq', 'minVersion': '0.0.1', 'configuration': {'settings': {'type': 'iaqSettingsList', 'properties': {'items': []}}, 'commandAndControl': {'type': 'iaqFullScreen', 'properties': {'uiComponent': {'type': 'gaugeModeUI', 'properties': {'selector': {'type': 'selector', 'properties': {'hide': {'type': 'component', 'componentRead': {'type': 'number', 'readId': 17}, 'componentValue': 7}, 'componentStates': [{'componentReadValue': 2, 'componentWrite': {'type': 'number', 'value': 2, 'writeId': 14}, 'label': {'default': 'Smart Heating / Cooling', 'i18n': {'key': 'ami_mode_auto'}}}, {'componentReadValue': 3, 'componentWrite': {'type': 'number', 'value': 3, 'writeId': 14}, 'label': {'default': 'Boost Heating', 'i18n': {'key': 'ami_mode_quick_heating'}}}, {'componentReadValue': 0, 'componentWrite': {'type': 'number', 'value': 0, 'writeId': 14}, 'label': {'default': 'Smart Heating', 'i18n': {'key': 'ami_mode_heating'}}}, {'componentReadValue': 4, 'componentWrite': {'type': 'number', 'value': 4, 'writeId': 14}, 'label': {'default': 'Silence Heating', 'i18n': {'key': 'ami_mode_low_noise_heating'}}}, {'componentReadValue': 5, 'componentWrite': {'type': 'number', 'value': 5, 'writeId': 14}, 'label': {'default': 'Boost Cooling', 'i18n': {'key': 'ami_mode_quick_cooling'}}}, {'componentReadValue': 1, 'componentWrite': {'type': 'number', 'value': 1, 'writeId': 14}, 'label': {'default': 'Smart Cooling', 'i18n': {'key': 'ami_mode_cooling'}}}, {'componentReadValue': 6, 'componentWrite': {'type': 'number', 'value': 6, 'writeId': 14}, 'label': {'default': 'Silence Cooling', 'i18n': {'key': 'ami_mode_low_noise_cooling'}}}], 'title': {'default': 'Mode', 'i18n': {'key': 'hpc_mode_label'}}, 'componentRead': {'type': 'number', 'readId': 14}, 'info': {'icon': {'id': 'global.help'}, 'description': [{'default': '\nBoost : Maximum power for fast heat-up.\nSmart : Automatic power adjustment between Ecosilence and Boost.\nEcosilence : Greater energy savings and lower noise level', 'i18n': {'key': 'hp_amitime_mode_text_heating'}}, {'default': '\nBoost : Maximum power for fast cooling.\nSmart : Automatic power adjustment.\nEcosilence : Minimum power', 'i18n': {'key': 'hp_amitime_mode_text_cooling'}}, {'default': '\nAutomatic smart mode when heating + cooling mode are activated', 'i18n': {'key': 'hp_amitime_mode_text_auto'}}], 'text': [{'default': 'Heating', 'i18n': {'key': 'hp_amitime_mode_title_heating'}}, {'default': 'Cooling', 'i18n': {'key': 'hp_amitime_mode_title_cooling'}}, {'default': 'Auto', 'i18n': {'key': 'hp_amitime_mode_title_auto'}}]}}}, 'gaugeContainer': {'type': 'gaugeContainer', 'properties': {'slider': {'type': 'slider', 'properties': {'min': {'type': 'component', 'value': 81}, 'setpoint': {'componentWrite': {'writeId': 15, 'type': 'number', 'factor': 0.1, 'decimals': 1}, 'default': {'default': 15}, 'units': '°', 'steps': 1, 'componentRead': {'readId': 15, 'type': 'number', 'factor': 0.1, 'decimals': 0}}, 'max': {'type': 'component', 'value': 82}, 'value': {'default': {'default': 15}, 'units': '°', 'min': 7, 'max': 40, 'componentRead': {'readId': 19, 'type': 'number', 'factor': 0.1, 'decimals': 0}}}}, 'hide': {'type': 'component', 'componentRead': {'type': 'number', 'readId': 17}, 'componentValue': 7}, 'labels': {'top': {'type': 'label', 'properties': {'defaultValue': {'default': ''}, 'componentRead': {'readId': 28, 'type': 'number'}, 'componentStates': [{'componentReadValue': 1, 'label': {'icon': {'id': 'assets/images/equipment/hpc/ic_no_flow.png', 'onTap': {'data': {'default': 'The filtration pump is not on. Wait or activate it to allow the heat pump to work.', 'i18n': {'key': 'hpc_no_flow_explanation'}}, 'action': 'showPopup'}}, 'default': 'No Flow', 'color': 'warning', 'i18n': {'key': 'hpc_no_flow_label'}}}]}}, 'bottom': {'type': 'label', 'properties': {'default': {'default': '--.-'}, 'units': '°', 'title': {'default': 'Pool', 'i18n': {'key': 'hpc_gauge_pool_temperature_label'}}, 'componentRead': {'readId': 19, 'type': 'number', 'factor': 0.1, 'decimals': 0}}}, 'center': {'type': 'label', 'properties': {'default': {'default': '--.-'}, 'componentRead': {'readId': 15, 'type': 'number', 'factor': 0.1, 'decimals': 0}, 'units': '°'}}}}}, 'tutorial': {}, 'requiredComponents': [13], 'bottomRightLabel': {'type': 'label', 'properties': {'default': {'default': '--.-'}, 'units': '°', 'title': {'default': 'Pool', 'i18n': {'key': 'hpc_gauge_air_temperature_label'}}, 'componentRead': {'readId': 67, 'type': 'number', 'factor': 0.1, 'decimals': 0}}}, 'onOff': {'type': 'selector', 'properties': {'componentRead': {'type': 'number', 'readId': 13}, 'componentStates': [{'componentReadValue': 1, 'componentWrite': {'type': 'number', 'value': 1, 'writeId': 13}, 'label': {'icon': {'id': 'devices.onOff.ON'}, 'default': 'ON'}}, {'componentReadValue': 0, 'componentWrite': {'type': 'number', 'value': 0, 'writeId': 13}, 'label': {'icon': {'id': 'devices.onOff.OFF'}, 'default': 'OFF'}}]}}}}}}, 'info': {'type': 'iaqInfoList', 'properties': {'extraEquipmentLabels': [{'type': 'label', 'properties': {'title': {'default': 'Running hours', 'i18n': {'key': 'running_hours_title'}}, 'componentRead': {'readId': 0, 'type': 'number'}}}]}}}}
+2025-08-29 13:26:39,759 INFO [__main__] Device UI Config test successful!
+2025-08-29 13:26:39,760 INFO [__main__] 
+Testing User Profile data...
+2025-08-29 13:26:39,760 INFO [__main__] Resolving DNS for api.fluidra-emea.com...
+2025-08-29 13:26:39,762 INFO [__main__] Successfully resolved api.fluidra-emea.com to 45.60.80.124
+2025-08-29 13:26:39,762 INFO [__main__] Testing endpoint: https://api.fluidra-emea.com/generic/users/me
+2025-08-29 13:26:40,222 INFO [__main__] Response status: 200
+2025-08-29 13:26:40,223 INFO [__main__] Request successful!
+2025-08-29 13:26:40,223 INFO [__main__] User Profile data response data: {'id': '1704f297-8520-4584-b19d-f49740c627a8', 'email': 'thomasroager@gmail.com', 'name': {'firstName': 'Thomas', 'lastName': 'Roager'}, 'preferences': {'country': 'DK', 'notifications': {'recommendations': {'email': False, 'push': False}, 'information': {'email': False, 'push': False}, 'productNews': {'email': False, 'push': False}}, 'language': 'en'}, 'oneSignalExternalIdAuthHash': {'fluidraPool': '06b39b7428c29eb807c8240d07e853be360d7f135db0a0dc7ae090848bce686b'}, 'oneSignalEmailAuthHash': {'fluidraPool': '9d2b51e1d6979890d00a23b476a01dadf4666be3c4b36de92b5f5e48af157da6'}}
+2025-08-29 13:26:40,224 INFO [__main__] User Profile data test successful!
+2025-08-29 13:26:40,224 INFO [__main__] 
+Testing User Pools data...
+2025-08-29 13:26:40,225 INFO [__main__] Resolving DNS for api.fluidra-emea.com...
+2025-08-29 13:26:40,226 INFO [__main__] Successfully resolved api.fluidra-emea.com to 45.60.80.124
+2025-08-29 13:26:40,227 INFO [__main__] Testing endpoint: https://api.fluidra-emea.com/generic/users/me/pools
+2025-08-29 13:26:40,897 INFO [__main__] Response status: 200
+2025-08-29 13:26:40,898 INFO [__main__] Request successful!
+2025-08-29 13:26:40,899 INFO [__main__] User Pools data response data: [{'id': '6cfd9bc9-09e8-547d-9f5a-0274c170a915', 'name': 'Pool', 'owner': {'id': '1704f297-8520-4584-b19d-f49740c627a8', 'name': {'firstName': 'Thomas', 'lastName': 'Roager'}}}]
+2025-08-29 13:26:40,899 INFO [__main__] User Pools data test successful!
+2025-08-29 13:26:40,901 INFO [__main__] All enhanced tests completed successfully!
