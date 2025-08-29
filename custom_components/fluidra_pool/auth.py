@@ -1,63 +1,39 @@
 """Authentication for Fluidra Pool API."""
 import asyncio
 import logging
+import socket
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 
 import boto3
-import botocore.config
 from botocore.exceptions import ClientError
 
 from .const import COGNITO_REGION, COGNITO_POOL_ID, COGNITO_CLIENT_ID
 
 _LOGGER = logging.getLogger(__name__)
 
-# Configure boto3 to not use EC2 metadata service and optimize performance
-BOTO_CONFIG = botocore.config.Config(
-    connect_timeout=5,
-    read_timeout=5,
-    retries={'max_attempts': 2}
-)
-
 class FluidraAuth:
     """Handle Fluidra Pool authentication using AWS Cognito."""
     
-    def __init__(self, username: str, password: str):
+    def __init__(self, username: str, password: str, session=None):
         """Initialize the authentication handler."""
         self.username = username
         self.password = password
+        self.session = session
         self.access_token: Optional[str] = None
         self.id_token: Optional[str] = None
         self.refresh_token: Optional[str] = None
         self.token_expiry: Optional[datetime] = None
-        self.cognito_client = None
-        self._client_lock = asyncio.Lock()
-        
-    async def _get_cognito_client(self):
-        """Get or create the Cognito client in an async-safe way."""
-        async with self._client_lock:
-            if self.cognito_client is None:
-                self.cognito_client = await asyncio.get_event_loop().run_in_executor(
-                    None,
-                    lambda: boto3.client(
-                        'cognito-idp',
-                        region_name=COGNITO_REGION,
-                        config=BOTO_CONFIG
-                    )
-                )
-            return self.cognito_client
         
     async def authenticate(self) -> bool:
         """Authenticate with Fluidra Pool API."""
         try:
-            # Get the client in an async-safe way
-            client = await self._get_cognito_client()
+            # DNS resolution check
+            await self._check_dns_resolution()
             
             # Run authentication in executor to avoid blocking
             auth_result = await asyncio.get_event_loop().run_in_executor(
-                None,
-                self._authenticate_sync,
-                client
+                None, self._authenticate_sync
             )
             
             if auth_result:
@@ -65,97 +41,67 @@ class FluidraAuth:
                 self.id_token = auth_result["id_token"]
                 self.refresh_token = auth_result["refresh_token"]
                 self.token_expiry = auth_result["expiry"]
-                _LOGGER.debug("Successfully authenticated with Fluidra Pool API")
-                _LOGGER.debug("Access token: %s...%s", 
-                            self.access_token[:10] if self.access_token else 'None',
-                            self.access_token[-10:] if self.access_token else 'None')
+                _LOGGER.info("Successfully authenticated with Fluidra Pool API")
+                _LOGGER.debug("Access token: %s...%s", self.access_token[:10], self.access_token[-10:])
                 return True
             else:
-                _LOGGER.error("Authentication failed - no auth result returned")
+                _LOGGER.error("Authentication failed")
                 return False
                 
-        except asyncio.CancelledError:
-            _LOGGER.error("Authentication was cancelled")
-            return False
         except Exception as err:
-            _LOGGER.error("Authentication error: %s", str(err))
+            _LOGGER.error("Authentication error: %s", err)
             return False
-    
-    def _authenticate_sync(self, client) -> Optional[Dict[str, Any]]:
-        """Synchronously perform AWS Cognito authentication."""
+            
+    async def _check_dns_resolution(self) -> None:
+        """Check DNS resolution for the API endpoint."""
         try:
-            _LOGGER.debug("Starting authentication process for user: %s", self.username)
+            _LOGGER.info("Resolving DNS for api.fluidra-emea.com...")
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(None, socket.gethostbyname, "api.fluidra-emea.com")
+            _LOGGER.info("Successfully resolved api.fluidra-emea.com to %s", result)
+        except Exception as err:
+            _LOGGER.warning("DNS resolution failed: %s", err)
+    
+    def _authenticate_sync(self) -> Optional[Dict[str, Any]]:
+        """Synchronously perform AWS Cognito authentication using USER_PASSWORD_AUTH."""
+        try:
+            client = boto3.client('cognito-idp', region_name=COGNITO_REGION)
             
-            # Initiate direct password authentication
-            try:
-                _LOGGER.debug("Initiating password authentication")
-                response = client.initiate_auth(
-                    AuthFlow='USER_PASSWORD_AUTH',
-                    AuthParameters={
-                        'USERNAME': self.username,
-                        'PASSWORD': self.password
-                    },
-                    ClientId=COGNITO_CLIENT_ID
-                )
-            except ClientError as e:
-                error_code = e.response.get('Error', {}).get('Code', 'Unknown')
-                if error_code == 'NotAuthorizedException':
-                    _LOGGER.error("Invalid username or password")
-                elif error_code == 'UserNotFoundException':
-                    _LOGGER.error("User not found")
-                elif error_code == 'UserNotConfirmedException':
-                    _LOGGER.error("User is not confirmed")
-                else:
-                    _LOGGER.error("AWS authentication error: %s - %s", 
-                                error_code, 
-                                e.response.get('Error', {}).get('Message', str(e)))
-                return None
+            _LOGGER.info("Starting authentication process")
             
-            # Extract tokens from response
-            if 'AuthenticationResult' not in response:
-                _LOGGER.error("No authentication result in response")
-                _LOGGER.debug("Response: %s", response)
-                return None
-                
+            # Use USER_PASSWORD_AUTH flow (same as working test)
+            response = client.initiate_auth(
+                ClientId=COGNITO_CLIENT_ID,
+                AuthFlow='USER_PASSWORD_AUTH',
+                AuthParameters={
+                    'USERNAME': self.username,
+                    'PASSWORD': self.password
+                }
+            )
+            
+            # Extract tokens
             auth_result = response['AuthenticationResult']
-            _LOGGER.debug("Auth result keys: %s", auth_result.keys())
+            _LOGGER.info("Authentication successful")
             
-            # Check for required tokens
-            if not all(key in auth_result for key in ['AccessToken', 'IdToken', 'RefreshToken']):
-                _LOGGER.error("Missing required tokens in authentication result")
-                _LOGGER.debug("Available tokens: %s", list(auth_result.keys()))
-                return None
-            
-            expires_in = auth_result.get('ExpiresIn', 3600)  # Default 1 hour if not specified
-            
-            result = {
+            return {
                 "access_token": auth_result['AccessToken'],
-                "expiry": datetime.now() + timedelta(seconds=expires_in),
+                "expiry": datetime.now() + timedelta(seconds=auth_result['ExpiresIn']),
                 "id_token": auth_result['IdToken'],
                 "refresh_token": auth_result['RefreshToken']
             }
             
-            _LOGGER.debug("Authentication successful, tokens received")
-            _LOGGER.debug("Access token: %s...%s", 
-                         result["access_token"][:10],
-                         result["access_token"][-10:])
-            
-            return result
-            
         except ClientError as e:
             error_code = e.response.get('Error', {}).get('Code', 'Unknown')
-            _LOGGER.error("AWS Cognito error: %s - %s", 
-                         error_code,
-                         e.response.get('Error', {}).get('Message', str(e)))
+            error_message = e.response.get('Error', {}).get('Message', str(e))
+            _LOGGER.error("AWS Cognito authentication failed - Code: %s, Message: %s", error_code, error_message)
             return None
         except Exception as e:
-            _LOGGER.error("Unexpected authentication error: %s", str(e))
+            _LOGGER.error("Unexpected authentication error: %s", e)
             return None
     
     async def refresh_token_if_needed(self) -> bool:
         """Refresh token if it's expired or about to expire."""
         if not self.token_expiry:
-            _LOGGER.debug("No token expiry set, performing full authentication")
             return await self.authenticate()
         
         # Check if token expires within threshold
@@ -163,37 +109,26 @@ class FluidraAuth:
             _LOGGER.debug("Token expires soon, refreshing...")
             return await self.authenticate()
         
-        _LOGGER.debug("Token is still valid")
         return True
     
     def get_auth_headers(self) -> Dict[str, str]:
         """Get authentication headers for API requests."""
-        if not self.access_token or not self.id_token:
-            _LOGGER.warning("No access token or ID token available for headers")
-            _LOGGER.debug("Access token: %s, ID token: %s", 
-                         bool(self.access_token), 
-                         bool(self.id_token))
+        if not self.access_token:
             return {}
         
-        headers = {
+        return {
             "Authorization": f"Bearer {self.access_token}",
             "Content-Type": "application/json",
             "Accept": "application/json",
-            "x-api-key": self.id_token,
-            "x-access-token": self.access_token,
+            "x-api-key": self.access_token,  # Add missing x-api-key header
+            "x-access-token": self.access_token,  # Add missing x-access-token header
             "User-Agent": "Fluidra/1.0"
         }
-        
-        _LOGGER.debug("Generated headers with tokens")
-        return headers
     
     def is_authenticated(self) -> bool:
         """Check if currently authenticated."""
-        is_auth = (
+        return (
             self.id_token is not None and 
-            self.access_token is not None and
             self.token_expiry is not None and 
             datetime.now() < self.token_expiry
-        )
-        _LOGGER.debug("Authentication status: %s", "authenticated" if is_auth else "not authenticated")
-        return is_auth 
+        ) 
