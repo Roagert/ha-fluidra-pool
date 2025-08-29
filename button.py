@@ -41,13 +41,20 @@ class FluidraBaseButton:
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self.coordinator.last_update_success
+        # Entity is available if we have device data, regardless of current update status
+        # This prevents entities from showing as unavailable during updates
+        return bool(self.coordinator.devices or self.coordinator.last_update_success)
     
     async def async_added_to_hass(self) -> None:
         """When entity is added to hass."""
         self.async_on_remove(
-            self.coordinator.async_add_listener(self.async_write_ha_state)
+            self.coordinator.async_add_listener(self._coordinator_updated)
         )
+    
+    def _coordinator_updated(self) -> None:
+        """Handle coordinator data update."""
+        _LOGGER.debug("[Fluidra Debug] Button entity received coordinator update - writing HA state")
+        self.async_write_ha_state()
     
     @property
     def device_info(self) -> Optional[Dict[str, Any]]:
@@ -102,8 +109,35 @@ class FluidraRefreshButton(FluidraBaseButton, ButtonEntity):
     async def async_press(self) -> None:
         """Handle the button press."""
         _LOGGER.info("[Fluidra Debug] Manual refresh requested for all Fluidra Pool data (button pressed)")
+        _LOGGER.info("[Fluidra Debug] Current data state before refresh - devices: %s, components: %s", 
+                    len(self.coordinator.devices) if self.coordinator.devices else 0,
+                    len(self.coordinator.device_components_data) if self.coordinator.device_components_data else 0)
+        
         try:
+            # Request comprehensive data refresh
             await self.coordinator.async_request_refresh()
-            _LOGGER.info("[Fluidra Debug] Coordinator async_request_refresh completed successfully")
+            
+            # Log what was updated
+            _LOGGER.info("[Fluidra Debug] Refresh completed successfully!")
+            _LOGGER.info("[Fluidra Debug] Updated data summary:")
+            _LOGGER.info("  - Consumer data: %s", "✓" if self.coordinator.consumer_data else "✗")
+            _LOGGER.info("  - Devices: %s (%s devices)", 
+                        "✓" if self.coordinator.devices else "✗",
+                        len(self.coordinator.devices) if self.coordinator.devices else 0)
+            _LOGGER.info("  - User profile: %s", "✓" if self.coordinator.user_profile_data else "✗")
+            _LOGGER.info("  - User pools: %s", "✓" if self.coordinator.user_pools_data else "✗")
+            _LOGGER.info("  - Device components: %s (%s devices)", 
+                        "✓" if self.coordinator.device_components_data else "✗",
+                        len(self.coordinator.device_components_data) if self.coordinator.device_components_data else 0)
+            _LOGGER.info("  - Device UI config: %s (%s devices)", 
+                        "✓" if self.coordinator.device_uiconfig_data else "✗",
+                        len(self.coordinator.device_uiconfig_data) if self.coordinator.device_uiconfig_data else 0)
+            _LOGGER.info("  - Error information: %s", "✓" if self.coordinator.error_information else "✗")
+            
+            # Log which entities should receive updates
+            _LOGGER.info("[Fluidra Debug] All registered entities will receive coordinator update notifications")
+            _LOGGER.info("[Fluidra Debug] This includes: climate entities, sensor entities, and diagnostic data")
+            
         except Exception as e:
-            _LOGGER.error("[Fluidra Debug] Exception during async_request_refresh: %s", e) 
+            _LOGGER.error("[Fluidra Debug] Exception during async_request_refresh: %s", e)
+            raise 

@@ -80,8 +80,8 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
             update_interval=update_interval,
         )
         
-        self.auth = FluidraAuth(username, password)
         self.session = aiohttp.ClientSession()
+        self.auth = FluidraAuth(username, password, self.session)
         self.devices: Dict[str, Any] = {}
         self.consumer_data: Dict[str, Any] = {}
         self.user_profile_data: Dict[str, Any] = {}
@@ -131,9 +131,15 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
     
     async def schedule_quick_update(self) -> None:
         """Schedule a quick update after control commands."""
+        # Check if a regular update is already happening soon
+        if hasattr(self, '_update_task') and self._update_task and not self._update_task.done():
+            _LOGGER.debug("Regular update already in progress, skipping quick update.")
+            return
+            
         if self.quick_update_scheduled:
             _LOGGER.debug("Quick update already scheduled, skipping.")
             return
+            
         self.quick_update_scheduled = True
         if self.quick_update_task and not self.quick_update_task.done():
             self.quick_update_task.cancel()
@@ -144,6 +150,12 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
         """Perform a quick update after control commands."""
         try:
             await asyncio.sleep(QUICK_UPDATE_INTERVAL.total_seconds())
+            
+            # Double-check if a regular update is happening before proceeding
+            if hasattr(self, '_update_task') and self._update_task and not self._update_task.done():
+                _LOGGER.debug("Regular update started during quick update delay, skipping quick update.")
+                return
+                
             _LOGGER.info("Performing quick update after control command.")
             await self.async_request_refresh()
         except asyncio.CancelledError:
@@ -178,18 +190,56 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
         _LOGGER.info("[Fluidra Debug] Coordinator async_request_refresh finished at %s", datetime.now())
 
     async def _async_update_data(self) -> Dict[str, Any]:
-        _LOGGER.info("[Fluidra Debug] Coordinator _async_update_data called at %s", datetime.now())
+        _LOGGER.info("[Fluidra Debug] Coordinator _async_update_data called at %s (scheduled automatic update)", datetime.now())
+        _LOGGER.info("[Fluidra Debug] Update interval: %s, Last update success: %s", 
+                    self.update_interval, self.last_update_success)
+        
         try:
-            # Fetch all relevant data from the Fluidra API
-            await self._fetch_with_retries(self._fetch_consumer_data)
-            await self._fetch_with_retries(self._fetch_devices_data)
-            await self._fetch_with_retries(self._fetch_user_profile_data)
-            await self._fetch_with_retries(self._fetch_user_pools_data)
-            # Fetch device components and UI config for the first device
+            # Ensure we're authenticated before making any API calls
+            if not await self.auth.authenticate():
+                raise ConfigEntryAuthFailed("Failed to authenticate with Fluidra API")
+
+            # Track successful fetches - don't fail completely if some endpoints fail
+            fetch_results = {}
+            
+            # Core data fetches (most important)
+            try:
+                await self._fetch_with_retries(self._fetch_devices_data)
+                fetch_results['devices'] = True
+            except Exception as e:
+                _LOGGER.warning("Failed to fetch devices data: %s", e)
+                fetch_results['devices'] = False
+            
+            # Optional data fetches (less critical)
+            for fetch_name, fetch_func in [
+                ('consumer', self._fetch_consumer_data),
+                ('user_profile', self._fetch_user_profile_data),
+                ('user_pools', self._fetch_user_pools_data)
+            ]:
+                try:
+                    await self._fetch_with_retries(fetch_func)
+                    fetch_results[fetch_name] = True
+                except Exception as e:
+                    _LOGGER.warning("Failed to fetch %s data: %s", fetch_name, e)
+                    fetch_results[fetch_name] = False
+            
+            # Device-specific fetches (if we have devices)
             if self.devices:
                 first_device_id = next(iter(self.devices.keys()))
-                await self._fetch_with_retries(self._fetch_device_components_data, first_device_id)
-                await self._fetch_with_retries(self._fetch_device_uiconfig_data, first_device_id)
+                for fetch_name, fetch_func, args in [
+                    ('device_components', self._fetch_device_components_data, [first_device_id]),
+                    ('device_uiconfig', self._fetch_device_uiconfig_data, [first_device_id])
+                ]:
+                    try:
+                        await self._fetch_with_retries(fetch_func, *args)
+                        fetch_results[fetch_name] = True
+                    except Exception as e:
+                        _LOGGER.warning("Failed to fetch %s data: %s", fetch_name, e)
+                        fetch_results[fetch_name] = False
+            
+            # Process error information after all device data is loaded
+            self._process_error_information()
+            
             # Return a summary dict for debugging
             data = {
                 "consumer_data": self.consumer_data,
@@ -199,12 +249,27 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
                 "device_components_data": self.device_components_data,
                 "device_uiconfig_data": self.device_uiconfig_data,
                 "error_information": self.error_information,
+                "fetch_results": fetch_results,
             }
-            _LOGGER.info("[Fluidra Debug] Coordinator _async_update_data finished at %s", datetime.now())
-            return data
+            
+            # Consider update successful if we got at least device data
+            if fetch_results.get('devices', False):
+                _LOGGER.info("[Fluidra Debug] Update completed successfully (core data fetched) at %s", datetime.now())
+                _LOGGER.info("[Fluidra Debug] Fetch results: %s", fetch_results)
+                _LOGGER.info("[Fluidra Debug] Data fetched - devices: %s, components: %s, errors: %s", 
+                            len(self.devices) if self.devices else 0,
+                            len(self.device_components_data) if self.device_components_data else 0,
+                            len(self.error_information) if self.error_information else 0)
+                return data
+            else:
+                raise UpdateFailed("Failed to fetch core device data")
+                
+        except ConfigEntryAuthFailed as auth_err:
+            _LOGGER.error("[Fluidra Debug] Authentication failed in _async_update_data: %s", auth_err)
+            raise
         except Exception as err:
             _LOGGER.error("[Fluidra Debug] Error in _async_update_data: %s", err)
-            raise UpdateFailed(f"Fluidra update failed: {err}")
+            raise UpdateFailed(f"Fluidra automatic update failed: {err}")
     
     async def _fetch_consumer_data(self) -> None:
         """Fetch consumer data from API."""
@@ -214,8 +279,14 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
                 _LOGGER.warning("Rate limit exceeded for consumer data request")
                 return
             
+            # Ensure authentication
+            if not await self.auth.refresh_token_if_needed():
+                _LOGGER.error("Authentication failed for consumer data request")
+                return
+            
             _LOGGER.debug("Fetching consumer data from %s", API_CONSUMER_URL)
             headers = self.auth.get_auth_headers()
+            _LOGGER.debug("Request headers (masked): %s", {k: '****' if k in ['Authorization', 'x-api-key', 'x-access-token'] else v for k, v in headers.items()})
             
             # Record API call
             self._record_api_call()
@@ -224,9 +295,18 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
                 _LOGGER.debug("Consumer data response status: %s", response.status)
                 if response.status == 200:
                     self.consumer_data = await response.json()
-                    _LOGGER.debug("Successfully fetched consumer data")
+                    _LOGGER.debug("Successfully fetched consumer data: %s", self.consumer_data)
+                elif response.status == 401:
+                    response_text = await response.text()
+                    _LOGGER.error("Authentication failed for consumer data (401): %s", response_text)
+                    self.consumer_data = {}
+                elif response.status == 403:
+                    response_text = await response.text()
+                    _LOGGER.error("Access forbidden for consumer data (403): %s", response_text)
+                    self.consumer_data = {}
                 else:
-                    _LOGGER.error("Failed to fetch consumer data: %s", response.status)
+                    response_text = await response.text()
+                    _LOGGER.error("Failed to fetch consumer data (%s): %s", response.status, response_text)
                     self.consumer_data = {}
         except Exception as err:
             _LOGGER.error("Error fetching consumer data: %s", err)
@@ -240,6 +320,11 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
                 _LOGGER.warning("Rate limit exceeded for devices data request")
                 return
             
+            # Ensure authentication
+            if not await self.auth.refresh_token_if_needed():
+                _LOGGER.error("Authentication failed for devices data request")
+                return
+            
             _LOGGER.debug("Fetching devices data from %s", API_DEVICES_URL)
             headers = self.auth.get_auth_headers()
             
@@ -250,10 +335,21 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
                 _LOGGER.debug("Devices data response status: %s", response.status)
                 if response.status == 200:
                     raw_data = await response.json()
+                    _LOGGER.debug("Raw devices data: %s", raw_data)
                     self.devices = self._process_devices_data(raw_data)
-                    _LOGGER.debug("Successfully fetched devices data")
+                    _LOGGER.info("Successfully fetched devices data: %d devices found", len(self.devices))
+                    _LOGGER.debug("Processed devices data: %s", self.devices)
+                elif response.status == 401:
+                    response_text = await response.text()
+                    _LOGGER.error("Authentication failed for devices data (401): %s", response_text)
+                    self.devices = {}
+                elif response.status == 403:
+                    response_text = await response.text()
+                    _LOGGER.error("Access forbidden for devices data (403): %s", response_text)
+                    self.devices = {}
                 else:
-                    _LOGGER.error("Failed to fetch devices data: %s", response.status)
+                    response_text = await response.text()
+                    _LOGGER.error("Failed to fetch devices data (%s): %s", response.status, response_text)
                     self.devices = {}
         except Exception as err:
             _LOGGER.error("Error fetching devices data: %s", err)
@@ -329,35 +425,85 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
             "alarm_count": 0,
         }
         
-        # Process alarms and errors
+        # Process alarms and errors with enhanced detail
         alarms = device.get("alarms", [])
         if alarms:
             processed_device["alarm_count"] = len(alarms)
-            processed_device["alarm_status"] = "error" if any(alarm.get("type") == "error" for alarm in alarms) else "warning"
             
-            # Get the first error code and message
-            for alarm in alarms:
-                if alarm.get("type") == "error":
-                    error_code = alarm.get("errorCode")
-                    processed_device["error_code"] = error_code
-                    processed_device["error_message"] = ERROR_CODES.get(error_code, alarm.get("default", {}).get("text", "Unknown error"))
-                    break
+            # Categorize alarms
+            error_alarms = [alarm for alarm in alarms if alarm.get("type") == "error"]
+            warning_alarms = [alarm for alarm in alarms if alarm.get("type") == "warning"]
+            
+            if error_alarms:
+                processed_device["alarm_status"] = "error"
+                # Get the most recent or first error
+                error_alarm = error_alarms[0]
+                error_code = error_alarm.get("errorCode") or error_alarm.get("code")
+                processed_device["error_code"] = error_code
+                
+                # Try multiple fields for error message
+                error_message = (
+                    error_alarm.get("message") or 
+                    error_alarm.get("text") or 
+                    error_alarm.get("default", {}).get("text") or
+                    ERROR_CODES.get(error_code, "Unknown error")
+                )
+                processed_device["error_message"] = error_message
+                
+                # Store full error alarm data
+                processed_device["error_alarm_data"] = error_alarm
+                
+            elif warning_alarms:
+                processed_device["alarm_status"] = "warning"
+                warning_alarm = warning_alarms[0]
+                warning_code = warning_alarm.get("warningCode") or warning_alarm.get("code")
+                processed_device["warning_code"] = warning_code
+                processed_device["warning_message"] = (
+                    warning_alarm.get("message") or 
+                    warning_alarm.get("text") or 
+                    warning_alarm.get("default", {}).get("text") or
+                    "Warning condition detected"
+                )
+                processed_device["warning_alarm_data"] = warning_alarm
+            else:
+                processed_device["alarm_status"] = "unknown"
+                
+            # Store all alarm details for debugging
+            processed_device["all_alarms"] = alarms
         
-        # Extract component data
+        # Extract component data with full detail preservation
         components = device.get("components", [])
         if isinstance(components, list):
             for component in components:
                 component_id = component.get("id")
-                if component_id:
-                    processed_device["components"][component_id] = {
+                if component_id is not None:  # Allow ID 0
+                    processed_device["components"][str(component_id)] = {
                         "id": component_id,
                         "type": component.get("type"),
                         "status": component.get("status"),
                         "name": component.get("name"),
                         "model": component.get("model"),
                         "version": component.get("version"),
-                        "data": component.get("data", {})
+                        "data": component.get("data", {}),
+                        "value": component.get("value"),
+                        "reportedValue": component.get("reportedValue"),
+                        "desiredValue": component.get("desiredValue"),
+                        "ts": component.get("ts"),
+                        "timestamp": component.get("timestamp"),
+                        "unit": component.get("unit"),
+                        "min": component.get("min"),
+                        "max": component.get("max"),
+                        "step": component.get("step"),
+                        "readonly": component.get("readonly"),
+                        "writable": component.get("writable"),
+                        "category": component.get("category"),
+                        "description": component.get("description"),
+                        # Store full component data for debugging
+                        "raw_data": component
                     }
+        
+        # Store any additional device fields that might contain useful data
+        processed_device["raw_device_data"] = device
         
         return processed_device
     

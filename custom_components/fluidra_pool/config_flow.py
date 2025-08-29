@@ -102,6 +102,8 @@ class FluidraPoolOptionsFlow(config_entries.OptionsFlow):
     
     async def async_step_init(self, user_input=None) -> FlowResult:
         """Manage the options."""
+        config_entry = self.config_entry
+        
         if user_input is not None:
             # Validate input
             update_interval = user_input[CONF_UPDATE_INTERVAL]
@@ -120,22 +122,22 @@ class FluidraPoolOptionsFlow(config_entries.OptionsFlow):
                 api_rate_limit = MAX_API_RATE_LIMIT
             
             # Update config entry
-            new_data = self.config_entry.data.copy()
+            new_data = config_entry.data.copy()
             new_data[CONF_UPDATE_INTERVAL] = update_interval
             new_data[CONF_API_RATE_LIMIT] = api_rate_limit
             
             self.hass.config_entries.async_update_entry(
-                self.config_entry, data=new_data
+                config_entry, data=new_data
             )
             
             return self.async_create_entry(title="", data=user_input)
         
         # Get current values
-        current_update_interval = self.config_entry.data.get(
+        current_update_interval = config_entry.data.get(
             CONF_UPDATE_INTERVAL, 
             int(DEFAULT_SCAN_INTERVAL.total_seconds() / 60)
         )
-        current_api_rate_limit = self.config_entry.data.get(
+        current_api_rate_limit = config_entry.data.get(
             CONF_API_RATE_LIMIT, 
             DEFAULT_API_RATE_LIMIT
         )
