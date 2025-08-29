@@ -26,18 +26,39 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][config_entry.entry_id]["coordinator"]
     device_id = hass.data[DOMAIN][config_entry.entry_id]["device_id"]
     
-    # Create all sensor entities (removed FluidraPoolsSensor)
-    entities = [
-        FluidraConsumerSensor(coordinator, device_id),
-        FluidraDevicesSensor(coordinator, device_id),
-        FluidraUserProfileSensor(coordinator, device_id),
-        FluidraPoolStatusSensor(coordinator, device_id),
-        FluidraUserPoolsSensor(coordinator, device_id),
-        FluidraDeviceComponentsSensor(coordinator, device_id),
-        FluidraDeviceUIConfigSensor(coordinator, device_id),
-        FluidraErrorSensor(coordinator, device_id),
-    ]
+    # Create sensor entities only if they have data
+    entities = []
     
+    # Always create core entities that should exist
+    entities.append(FluidraDevicesSensor(coordinator, device_id))  # Always needed for device management
+    entities.append(FluidraErrorSensor(coordinator, device_id))    # Always needed for error monitoring
+    
+    # Conditionally create entities based on data availability
+    if coordinator.consumer_data:
+        entities.append(FluidraConsumerSensor(coordinator, device_id))
+        _LOGGER.info("Adding Consumer Data sensor - data available")
+    
+    if coordinator.user_profile_data:
+        entities.append(FluidraUserProfileSensor(coordinator, device_id))
+        _LOGGER.info("Adding User Profile sensor - data available")
+    
+    if coordinator.pool_status_data:
+        entities.append(FluidraPoolStatusSensor(coordinator, device_id))
+        _LOGGER.info("Adding Pool Status sensor - data available")
+    
+    if coordinator.user_pools_data:
+        entities.append(FluidraUserPoolsSensor(coordinator, device_id))
+        _LOGGER.info("Adding User Pools sensor - data available")
+    
+    if coordinator.device_components_data:
+        entities.append(FluidraDeviceComponentsSensor(coordinator, device_id))
+        _LOGGER.info("Adding Device Components sensor - data available")
+    
+    if coordinator.device_uiconfig_data:
+        entities.append(FluidraDeviceUIConfigSensor(coordinator, device_id))
+        _LOGGER.info("Adding Device UI Config sensor - data available")
+    
+    _LOGGER.info("Creating %d sensor entities based on available data", len(entities))
     async_add_entities(entities)
 
 class FluidraBaseEntity:
@@ -53,13 +74,20 @@ class FluidraBaseEntity:
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self.coordinator.last_update_success
+        # Entity is available if we have device data, regardless of current update status
+        # This prevents entities from showing as unavailable during updates
+        return bool(self.coordinator.devices or self.coordinator.last_update_success)
     
     async def async_added_to_hass(self) -> None:
         """When entity is added to hass."""
         self.async_on_remove(
-            self.coordinator.async_add_listener(self.async_write_ha_state)
+            self.coordinator.async_add_listener(self._coordinator_updated)
         )
+    
+    def _coordinator_updated(self) -> None:
+        """Handle coordinator data update."""
+        _LOGGER.debug("[Fluidra Debug] Sensor entity received coordinator update - writing HA state")
+        self.async_write_ha_state()
     
     @property
     def device_info(self) -> Optional[Dict[str, Any]]:
@@ -126,10 +154,21 @@ class FluidraConsumerSensor(FluidraBaseEntity, SensorEntity):
     def extra_state_attributes(self) -> Optional[Dict[str, Any]]:
         """Return additional state attributes."""
         attrs = {
-            "data": self.coordinator.consumer_data if hasattr(self, 'coordinator') and hasattr(self.coordinator, 'consumer_data') else None,
             "last_update": self.coordinator.last_update_success,
             "last_refreshed": datetime.now(timezone.utc).isoformat(),
         }
+        
+        # Add only essential consumer summary (not full data to avoid 16KB limit)
+        if hasattr(self, 'coordinator') and hasattr(self.coordinator, 'consumer_data') and self.coordinator.consumer_data:
+            consumer_data = self.coordinator.consumer_data
+            attrs["consumer_summary"] = {
+                "has_data": True,
+                "account_available": bool(consumer_data.get("id")),
+                "profile_complete": bool(consumer_data.get("name") or consumer_data.get("email")),
+            }
+        else:
+            attrs["consumer_summary"] = {"has_data": False}
+        
         return attrs
 
 class FluidraDevicesSensor(FluidraBaseEntity, SensorEntity):
@@ -153,11 +192,27 @@ class FluidraDevicesSensor(FluidraBaseEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> Optional[Dict[str, Any]]:
         """Return additional state attributes."""
-        return {
-            "data": self.coordinator.devices,
+        attrs = {
             "device_count": len(self.coordinator.devices) if self.coordinator.devices else 0,
             "last_update": self.coordinator.last_update_success,
         }
+        
+        # Add only essential device summary info (not full data to avoid 16KB limit)
+        if self.coordinator.devices:
+            devices_summary = {}
+            for device_id, device_data in self.coordinator.devices.items():
+                devices_summary[device_id] = {
+                    "name": device_data.get("device_name", "Unknown"),
+                    "model": device_data.get("device_model", "Unknown"),
+                    "serial": device_data.get("serial_number", "Unknown"),
+                    "status": device_data.get("status", "Unknown"),
+                    "alarm_status": device_data.get("alarm_status", "normal"),
+                    "error_code": device_data.get("error_code"),
+                    "error_message": device_data.get("error_message"),
+                }
+            attrs["devices_summary"] = devices_summary
+        
+        return attrs
 
 class FluidraUserProfileSensor(FluidraBaseEntity, SensorEntity):
     """Sensor containing all user profile API data."""
@@ -179,10 +234,23 @@ class FluidraUserProfileSensor(FluidraBaseEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> Optional[Dict[str, Any]]:
         """Return additional state attributes."""
-        return {
-            "data": self.coordinator.user_profile_data,
+        attrs = {
             "last_update": self.coordinator.last_update_success,
         }
+        
+        # Add only essential user profile summary (not full data to avoid 16KB limit)
+        if self.coordinator.user_profile_data:
+            profile_data = self.coordinator.user_profile_data
+            attrs["profile_summary"] = {
+                "has_data": True,
+                "has_name": bool(profile_data.get("name")),
+                "has_email": bool(profile_data.get("email")),
+                "has_preferences": bool(profile_data.get("preferences")),
+            }
+        else:
+            attrs["profile_summary"] = {"has_data": False}
+        
+        return attrs
 
 class FluidraPoolStatusSensor(FluidraBaseEntity, SensorEntity):
     """Sensor containing all pool status API data."""
@@ -204,10 +272,21 @@ class FluidraPoolStatusSensor(FluidraBaseEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> Optional[Dict[str, Any]]:
         """Return additional state attributes."""
-        return {
-            "data": self.coordinator.pool_status_data,
+        attrs = {
             "last_update": self.coordinator.last_update_success,
         }
+        
+        # Add only essential pool status summary (not full data to avoid 16KB limit)
+        if self.coordinator.pool_status_data:
+            status_data = self.coordinator.pool_status_data
+            attrs["status_summary"] = {
+                "has_data": True,
+                "status_available": bool(status_data),
+            }
+        else:
+            attrs["status_summary"] = {"has_data": False}
+        
+        return attrs
 
 class FluidraUserPoolsSensor(FluidraBaseEntity, SensorEntity):
     """Sensor containing all user pools API data."""
@@ -229,10 +308,25 @@ class FluidraUserPoolsSensor(FluidraBaseEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> Optional[Dict[str, Any]]:
         """Return additional state attributes."""
-        return {
-            "data": self.coordinator.user_pools_data,
+        attrs = {
             "last_update": self.coordinator.last_update_success,
         }
+        
+        # Add only essential pools summary (not full data to avoid 16KB limit)
+        if self.coordinator.user_pools_data:
+            pools_data = self.coordinator.user_pools_data
+            if isinstance(pools_data, list):
+                attrs["pools_summary"] = {
+                    "has_data": True,
+                    "pool_count": len(pools_data),
+                    "pools": [{"id": pool.get("id"), "name": pool.get("name", "Unnamed")} for pool in pools_data[:5]]  # Limit to 5 pools
+                }
+            else:
+                attrs["pools_summary"] = {"has_data": True, "pool_count": 1}
+        else:
+            attrs["pools_summary"] = {"has_data": False, "pool_count": 0}
+        
+        return attrs
 
 class FluidraDeviceComponentsSensor(FluidraBaseEntity, SensorEntity):
     """Sensor containing all device components API data."""
@@ -254,10 +348,29 @@ class FluidraDeviceComponentsSensor(FluidraBaseEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> Optional[Dict[str, Any]]:
         """Return additional state attributes."""
-        return {
-            "data": self.coordinator.device_components_data,
+        attrs = {
             "last_update": self.coordinator.last_update_success,
         }
+        
+        # Add only essential component summary info (not full data to avoid 16KB limit)
+        if self.coordinator.device_components_data:
+            components_summary = {}
+            for device_id, components in self.coordinator.device_components_data.items():
+                device_components = {}
+                for comp_id, comp_data in components.items():
+                    if isinstance(comp_data, dict):
+                        device_components[comp_id] = {
+                            "type": comp_data.get("type"),
+                            "status": comp_data.get("status"),
+                            "value": comp_data.get("reportedValue"),
+                            "unit": comp_data.get("unit"),
+                            "writable": comp_data.get("writable", False),
+                        }
+                components_summary[device_id] = device_components
+            attrs["components_summary"] = components_summary
+            attrs["total_components"] = sum(len(comps) for comps in self.coordinator.device_components_data.values())
+        
+        return attrs
 
 class FluidraDeviceUIConfigSensor(FluidraBaseEntity, SensorEntity):
     """Sensor containing all device UI config API data."""
@@ -279,10 +392,24 @@ class FluidraDeviceUIConfigSensor(FluidraBaseEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> Optional[Dict[str, Any]]:
         """Return additional state attributes."""
-        return {
-            "data": self.coordinator.device_uiconfig_data,
+        attrs = {
             "last_update": self.coordinator.last_update_success,
         }
+        
+        # Add only essential UI config summary (not full data to avoid 16KB limit)
+        if self.coordinator.device_uiconfig_data:
+            uiconfig_summary = {}
+            for device_id, config_data in self.coordinator.device_uiconfig_data.items():
+                if isinstance(config_data, dict):
+                    uiconfig_summary[device_id] = {
+                        "config_available": True,
+                        "has_temperature_config": "temperature" in str(config_data).lower(),
+                        "has_mode_config": "mode" in str(config_data).lower(),
+                        "config_keys": list(config_data.keys()) if isinstance(config_data, dict) else [],
+                    }
+            attrs["uiconfig_summary"] = uiconfig_summary
+        
+        return attrs
 
 class FluidraErrorSensor(FluidraBaseEntity, SensorEntity):
     """Sensor containing error information."""

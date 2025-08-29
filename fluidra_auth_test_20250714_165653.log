@@ -1,0 +1,88 @@
+2025-07-14 16:56:53,077 DEBUG [asyncio] Using proactor: IocpProactor
+2025-07-14 16:56:53,079 INFO [__main__] Starting Fluidra authentication test
+2025-07-14 16:56:53,079 INFO [__main__] Using Cognito configuration:
+2025-07-14 16:56:53,080 INFO [__main__]   Region: eu-west-1
+2025-07-14 16:56:53,080 INFO [__main__]   Pool ID: eu-west-1_OnopMZF9X
+2025-07-14 16:56:53,080 INFO [__main__]   Client ID: g3njunelkcbtefosqm9bdhhq1
+2025-07-14 16:56:53,080 INFO [__main__] Resolving DNS for api.fluidra-emea.com...
+2025-07-14 16:56:53,282 INFO [__main__] Successfully resolved api.fluidra-emea.com to 45.60.80.124
+2025-07-14 16:57:01,884 DEBUG [botocore.hooks] Changing event name from creating-client-class.iot-data to creating-client-class.iot-data-plane
+2025-07-14 16:57:01,886 DEBUG [botocore.hooks] Changing event name from before-call.apigateway to before-call.api-gateway
+2025-07-14 16:57:01,887 DEBUG [botocore.hooks] Changing event name from request-created.machinelearning.Predict to request-created.machine-learning.Predict
+2025-07-14 16:57:01,887 DEBUG [botocore.hooks] Changing event name from before-parameter-build.autoscaling.CreateLaunchConfiguration to before-parameter-build.auto-scaling.CreateLaunchConfiguration
+2025-07-14 16:57:01,888 DEBUG [botocore.hooks] Changing event name from before-parameter-build.route53 to before-parameter-build.route-53
+2025-07-14 16:57:01,889 DEBUG [botocore.hooks] Changing event name from request-created.cloudsearchdomain.Search to request-created.cloudsearch-domain.Search
+2025-07-14 16:57:01,889 DEBUG [botocore.hooks] Changing event name from docs.*.autoscaling.CreateLaunchConfiguration.complete-section to docs.*.auto-scaling.CreateLaunchConfiguration.complete-section
+2025-07-14 16:57:01,892 DEBUG [botocore.hooks] Changing event name from before-parameter-build.logs.CreateExportTask to before-parameter-build.cloudwatch-logs.CreateExportTask
+2025-07-14 16:57:01,893 DEBUG [botocore.hooks] Changing event name from docs.*.logs.CreateExportTask.complete-section to docs.*.cloudwatch-logs.CreateExportTask.complete-section
+2025-07-14 16:57:01,893 DEBUG [botocore.hooks] Changing event name from before-parameter-build.cloudsearchdomain.Search to before-parameter-build.cloudsearch-domain.Search
+2025-07-14 16:57:01,893 DEBUG [botocore.hooks] Changing event name from docs.*.cloudsearchdomain.Search.complete-section to docs.*.cloudsearch-domain.Search.complete-section
+2025-07-14 16:57:01,897 DEBUG [botocore.utils] IMDS ENDPOINT: http://169.254.169.254/
+2025-07-14 16:57:01,898 DEBUG [botocore.credentials] Looking for credentials via: env
+2025-07-14 16:57:01,899 DEBUG [botocore.credentials] Looking for credentials via: assume-role
+2025-07-14 16:57:01,899 DEBUG [botocore.credentials] Looking for credentials via: assume-role-with-web-identity
+2025-07-14 16:57:01,899 DEBUG [botocore.credentials] Looking for credentials via: sso
+2025-07-14 16:57:01,900 DEBUG [botocore.credentials] Looking for credentials via: shared-credentials-file
+2025-07-14 16:57:01,901 DEBUG [botocore.credentials] Looking for credentials via: custom-process
+2025-07-14 16:57:01,902 DEBUG [botocore.credentials] Looking for credentials via: config-file
+2025-07-14 16:57:01,902 DEBUG [botocore.credentials] Looking for credentials via: ec2-credentials-file
+2025-07-14 16:57:01,902 DEBUG [botocore.credentials] Looking for credentials via: boto-config
+2025-07-14 16:57:01,903 DEBUG [botocore.credentials] Looking for credentials via: container-role
+2025-07-14 16:57:01,903 DEBUG [botocore.credentials] Looking for credentials via: iam-role
+2025-07-14 16:57:01,903 DEBUG [botocore.utils] Access to EC2 metadata has been disabled.
+2025-07-14 16:57:01,903 DEBUG [botocore.utils] Max number of attempts exceeded (1) when attempting to retrieve data from metadata service.
+2025-07-14 16:57:01,923 DEBUG [botocore.loaders] Loading JSON file: C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\data\endpoints.json
+2025-07-14 16:57:01,957 DEBUG [botocore.loaders] Loading JSON file: C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\data\sdk-default-configuration.json
+2025-07-14 16:57:01,958 DEBUG [botocore.hooks] Event choose-service-name: calling handler <function handle_service_name_alias at 0x00000236FB032980>
+2025-07-14 16:57:02,038 DEBUG [botocore.loaders] Loading JSON file: C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\data\cognito-idp\2016-04-18\service-2.json.gz
+2025-07-14 16:57:02,110 DEBUG [botocore.loaders] Loading JSON file: C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\data\cognito-idp\2016-04-18\endpoint-rule-set-1.json.gz
+2025-07-14 16:57:02,124 DEBUG [botocore.loaders] Loading JSON file: C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\data\partitions.json
+2025-07-14 16:57:02,127 DEBUG [botocore.hooks] Event creating-client-class.cognito-identity-provider: calling handler <function add_generate_presigned_url at 0x00000236FAFA9800>
+2025-07-14 16:57:02,128 DEBUG [botocore.configprovider] Looking for endpoint for cognito-idp via: environment_service
+2025-07-14 16:57:02,128 DEBUG [botocore.configprovider] Looking for endpoint for cognito-idp via: environment_global
+2025-07-14 16:57:02,129 DEBUG [botocore.configprovider] Looking for endpoint for cognito-idp via: config_service
+2025-07-14 16:57:02,129 DEBUG [botocore.configprovider] Looking for endpoint for cognito-idp via: config_global
+2025-07-14 16:57:02,129 DEBUG [botocore.configprovider] No configured endpoint found.
+2025-07-14 16:57:02,132 DEBUG [botocore.endpoint] Setting cognito-idp timeout as (5, 5)
+2025-07-14 16:57:02,151 DEBUG [botocore.loaders] Loading JSON file: C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\data\_retry.json
+2025-07-14 16:57:02,151 DEBUG [botocore.client] Registering retry handlers for service: cognito-idp
+2025-07-14 16:57:02,152 INFO [__main__] Starting authentication process
+2025-07-14 16:57:02,153 DEBUG [botocore.hooks] Event before-parameter-build.cognito-identity-provider.InitiateAuth: calling handler <function generate_idempotent_uuid at 0x00000236FB032FC0>
+2025-07-14 16:57:02,153 DEBUG [botocore.hooks] Event before-parameter-build.cognito-identity-provider.InitiateAuth: calling handler <function _handle_request_validation_mode_member at 0x00000236FB059B20>
+2025-07-14 16:57:02,153 DEBUG [botocore.regions] Calling endpoint provider with parameters: {'Region': 'eu-west-1', 'UseDualStack': False, 'UseFIPS': False}
+2025-07-14 16:57:02,154 DEBUG [botocore.regions] Endpoint provider result: https://cognito-idp.eu-west-1.amazonaws.com
+2025-07-14 16:57:02,154 DEBUG [botocore.hooks] Event before-call.cognito-identity-provider.InitiateAuth: calling handler <function add_recursion_detection_header at 0x00000236FB032B60>
+2025-07-14 16:57:02,154 DEBUG [botocore.hooks] Event before-call.cognito-identity-provider.InitiateAuth: calling handler <function inject_api_version_header_if_needed at 0x00000236FB058AE0>
+2025-07-14 16:57:02,154 DEBUG [botocore.endpoint] Making request for OperationModel(name=InitiateAuth) with params: {'url_path': '/', 'query_string': '', 'method': 'POST', 'headers': {'X-Amz-Target': 'AWSCognitoIdentityProviderService.InitiateAuth', 'Content-Type': 'application/x-amz-json-1.1', 'User-Agent': 'Boto3/1.39.3 md/Botocore#1.39.3 ua/2.1 os/windows#11 md/arch#amd64 lang/python#3.13.2 md/pyimpl#CPython m/b,Z,D cfg/retry-mode#legacy Botocore/1.39.3'}, 'body': b'{"AuthFlow": "USER_PASSWORD_AUTH", "AuthParameters": {"USERNAME": "thomasroager@gmail.com", "PASSWORD": "S0davand!"}, "ClientId": "g3njunelkcbtefosqm9bdhhq1"}', 'url': 'https://cognito-idp.eu-west-1.amazonaws.com/', 'context': {'client_region': 'eu-west-1', 'client_config': <botocore.config.Config object at 0x00000236FBA48410>, 'has_streaming_input': False, 'auth_type': 'none', 'unsigned_payload': None, 'auth_options': ['aws.auth#sigv4']}}
+2025-07-14 16:57:02,155 DEBUG [botocore.hooks] Event request-created.cognito-identity-provider.InitiateAuth: calling handler <bound method RequestSigner.handler of <botocore.signers.RequestSigner object at 0x00000236FB121BE0>>
+2025-07-14 16:57:02,155 DEBUG [botocore.hooks] Event choose-signer.cognito-identity-provider.InitiateAuth: calling handler <function set_operation_specific_signer at 0x00000236FB032DE0>
+2025-07-14 16:57:02,155 DEBUG [botocore.hooks] Event request-created.cognito-identity-provider.InitiateAuth: calling handler <bound method UserAgentString.rebuild_and_replace_user_agent_handler of <botocore.useragent.UserAgentString object at 0x00000236FBA491D0>>
+2025-07-14 16:57:02,156 DEBUG [botocore.hooks] Event request-created.cognito-identity-provider.InitiateAuth: calling handler <function add_retry_headers at 0x00000236FB0593A0>
+2025-07-14 16:57:02,156 DEBUG [botocore.endpoint] Sending http request: <AWSPreparedRequest stream_output=False, method=POST, url=https://cognito-idp.eu-west-1.amazonaws.com/, headers={'X-Amz-Target': b'AWSCognitoIdentityProviderService.InitiateAuth', 'Content-Type': b'application/x-amz-json-1.1', 'User-Agent': b'Boto3/1.39.3 md/Botocore#1.39.3 ua/2.1 os/windows#11 md/arch#amd64 lang/python#3.13.2 md/pyimpl#CPython m/b,Z,D cfg/retry-mode#legacy Botocore/1.39.3', 'amz-sdk-invocation-id': b'289e9b44-a64c-4d87-87ce-a4ae8d76d3ca', 'amz-sdk-request': b'attempt=1', 'Content-Length': '158'}>
+2025-07-14 16:57:02,161 DEBUG [botocore.httpsession] Certificate path: C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\certifi\cacert.pem
+2025-07-14 16:57:02,162 DEBUG [urllib3.connectionpool] Starting new HTTPS connection (1): cognito-idp.eu-west-1.amazonaws.com:443
+2025-07-14 16:57:02,979 DEBUG [urllib3.connectionpool] https://cognito-idp.eu-west-1.amazonaws.com:443 "POST / HTTP/1.1" 200 4703
+2025-07-14 16:57:02,980 DEBUG [botocore.parsers] Response headers: {'Date': 'Mon, 14 Jul 2025 14:57:03 GMT', 'Content-Type': 'application/x-amz-json-1.1', 'Content-Length': '4703', 'Connection': 'keep-alive', 'x-amzn-RequestId': '70c00012-df12-4cbd-bceb-f2e846d33660'}
+2025-07-14 16:57:02,980 DEBUG [botocore.parsers] Response body:
+b'{"AuthenticationResult":{"AccessToken":"eyJraWQiOiJJRmVQT1hiRU1ZQXZ0VGE0d25aN3llRkxzbFZtckdUYSthWVlwa2pBTTNBPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiIxNzA0ZjI5Ny04NTIwLTQ1ODQtYjE5ZC1mNDk3NDBjNjI3YTgiLCJjb2duaXRvOmdyb3VwcyI6WyJjb25zdW1lciJdLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAuZXUtd2VzdC0xLmFtYXpvbmF3cy5jb21cL2V1LXdlc3QtMV9Pbm9wTVpGOVgiLCJjbGllbnRfaWQiOiJnM25qdW5lbGtjYnRlZm9zcW05YmRoaHExIiwib3JpZ2luX2p0aSI6Ijc1ODAxZDFhLTFjYTItNGIxYS04MWQyLWE3OWQzMWQ2ZTY5YyIsImV2ZW50X2lkIjoiNzBjMDAwMTItZGYxMi00Y2JkLWJjZWItZjJlODQ2ZDMzNjYwIiwidG9rZW5fdXNlIjoiYWNjZXNzIiwic2NvcGUiOiJhd3MuY29nbml0by5zaWduaW4udXNlci5hZG1pbiIsImF1dGhfdGltZSI6MTc1MjUwNTAyMywiZXhwIjoxNzUyNTA1MzIzLCJpYXQiOjE3NTI1MDUwMjMsImp0aSI6ImNhMzU1NmVlLWY3NTEtNDI0OS04YzEwLTFhZWFlNWY5MTViOCIsInVzZXJuYW1lIjoiMTcwNGYyOTctODUyMC00NTg0LWIxOWQtZjQ5NzQwYzYyN2E4In0.k8KLxh_KjI7kbMg8ABKJU1LxCmebXdHROfJy0-oKDF4lqTvExjb2r23yAiZ-d-N5FV5aMZKOEjFBlC7sWGQUGxckmwazwVgWyRN2OLLhwxv3iDhhoB2CjLtf1rkkYqNWnKAmts3GUKfPIi9lZiM0mNciHuRXNfaukFiudem5-ycbS-VJkzMc-3c2qHntrYgeC7XUUQevnkxXKfIddJiSHn5OyayVgabcjN78AhjmBVKvra8eLivl5pJ6p065YyfYt9RjbEsifuDUBZxmxm1qlZH8GoZzbN7SuhQnvUoNuxmQMf_PZfnXRy4w0ImdAG45hwSdDxkOGKUxetFfGeaL3Q","ExpiresIn":300,"IdToken":"eyJraWQiOiJ5eHdNYkY5SW51TDUyakdsRjhVMnFIV2pzc2hOTHpDODBzNThDWmdwU044PSIsImFsZyI6IlJTMjU2In0.eyJjdXN0b206dXNlcl9wcmVmZXJlbmNlcyI6IntcImxhbmd1YWdlXCI6XCJlblwiLFwiY291bnRyeVwiOlwiREtcIn0iLCJzdWIiOiIxNzA0ZjI5Ny04NTIwLTQ1ODQtYjE5ZC1mNDk3NDBjNjI3YTgiLCJjb2duaXRvOmdyb3VwcyI6WyJjb25zdW1lciJdLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAuZXUtd2VzdC0xLmFtYXpvbmF3cy5jb21cL2V1LXdlc3QtMV9Pbm9wTVpGOVgiLCJjb2duaXRvOnVzZXJuYW1lIjoiMTcwNGYyOTctODUyMC00NTg0LWIxOWQtZjQ5NzQwYzYyN2E4IiwiZ2l2ZW5fbmFtZSI6IlRob21hcyIsImxvY2FsZSI6ImVuIiwib3JpZ2luX2p0aSI6Ijc1ODAxZDFhLTFjYTItNGIxYS04MWQyLWE3OWQzMWQ2ZTY5YyIsImF1ZCI6Imczbmp1bmVsa2NidGVmb3NxbTliZGhocTEiLCJldmVudF9pZCI6IjcwYzAwMDEyLWRmMTItNGNiZC1iY2ViLWYyZTg0NmQzMzY2MCIsImN1c3RvbTphY2NlcHRlZF9kb2N1bWVudHMiOiJbe1widHlwZVwiOlwicHJpdmFjeVBvbGljeVwiLFwic2VydmljZVwiOlwibW9iaWxlXCIsXCJjb3VudHJ5XCI6XCJES1wiLFwibGFuZ3VhZ2VcIjpcImVuXCIsXCJ2ZXJzaW9uXCI6XCIwLjAuMVwiLFwicnVudGltZVR5cGVcIjpcImJvZHlcIn0se1widHlwZVwiOlwidGVybXNPZlVzZVwiLFwic2VydmljZVwiOlwibW9iaWxlXCIsXCJjb3VudHJ5XCI6XCJES1wiLFwibGFuZ3VhZ2VcIjpcImVuXCIsXCJ2ZXJzaW9uXCI6XCIwLjAuMVwiLFwicnVudGltZVR5cGVcIjpcImJvZHlcIn1dIiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE3NTI1MDUwMjMsImV4cCI6MTc1MjUwNTMyMywiaWF0IjoxNzUyNTA1MDIzLCJmYW1pbHlfbmFtZSI6IlJvYWdlciIsImp0aSI6ImU0OGMwNjcxLWZhMTQtNGEyMS05YWExLTdhZDc1MDljODcyYyIsImVtYWlsIjoidGhvbWFzcm9hZ2VyQGdtYWlsLmNvbSJ9.Z4CkIIT-gI3hp0hYNKeUyXxgJozCR4coD4wUZCbuiRgdOWdyq6mn5jRmGcaDV9FEEUjth5IvLZzrIG5BGs_Be_NPCA1aRK_nUkRGYJlnhfBYL7MpV5np6d5o0TIn9rBDUY5hqu9zvzAGuqyVQx22ksSZKvHUmeYdNJq9z94rBZU_ANi6wDSp0Fco1_yW_m3fV6GhuslH9tcfJiVHmlDe7GSgKamEFP2DV4eGbr3NdsfRFEpH96RQTesn-r3ZPhNQH99hrDRKphlVc8B3PXLTQwUuslRundRjKWK8vNiri5HYXHi6gM_ELxP0nfO5wUb-gC89cmQ0BEY2m-khYkSwfQ","RefreshToken":"eyJjdHkiOiJKV1QiLCJlbmMiOiJBMjU2R0NNIiwiYWxnIjoiUlNBLU9BRVAifQ.DX-lvSb6d1iIkusNsgXKW-ZzxxR30zrVJ0Kn9HBwDBqaX513oIRT3DbvJh_pYVgXhOngqFGKnHITtN-CGYZrOe4xtXP4vwaWAt7obrvT_u84TubOlTfV3hMtL5og8y4Ie5z2FroUnD0QFe5RWiRfGk0-XYsAvGaTswvqPlF2JTUyFJJJGa246-TrB3sg3b1SE-5EgzM-OAmJlvXusmY7Pg21kr5qrG4ptn--ORvdoudYeSW5YRGJXqflfelMP3KQ99dlVvmENHEK3EThfUc3Xv0Uq1qFmXSqB0Hz6mjk_yMvMFbsYfiJdEVTvcC9QM0IfCFQJtWRJmCWawh07kZCzA.o5PHl7G6672l__Iw.7vtllzh3Aoaw8pgjSivSMPBYdjCNCIBIhabK7ev12_wmxg1R1H2qB4lyOgAocCwCgU4qU6SC4b_QS1EINduTRe0NQzsNiG8XegvBiKmZF3W5iToxRpcB9T2HyvMW3ogtWltVnVKcY42w78vVuqwMWS37LXUeD3TyHNv5Bvwfq-zUwMGEyPzSkSyJygL8hWxmqN2Ubhgj2nE5GKcjt6ZLmMedAwQYV2D82-a5vJOoQQIyGvziTm4UCGYAwIEyEpn-8TW6vzEEmdrT7lj9puOvdAX6H82fivmhFzlPPv4ZAbL3dnUmPFQSCeLmc6Hbiob6vT3MMICFU59vemTJCW_D1QU4Gc3kptPLPeen44nnV0SZLjL43tLvXLx5Z57AooMalMD7tyB8fBfJB9AxxVEFESwR7Oz6X4oprzVUbDZgpzL96EAUuzdhDF24NF4DZTLFLhGmDxwhvnFYA5b2dXgb6eldaa9I9H2AEla-jdNu8d_zZFCXLqkhkaWJMnyYwz8CycPKTbeotm71w_3FqavY4dKMKgCx4fnAaCV0CqujeVuaBC42R8L4sQuJq9Q-qGJGokZvkwj97bWiyvyH8QQyx8IE8HkZ5oc224iXfONNZQc4meMObwD-PAJ3PQsikScdStPJn6SUIWjUXk7fs7-zg8TNe_2a3WinDeaYyWHZEXZ4eME2y6DXHbvGSJ5QIlVEmoAQOOU8B6ts9HoZ1DwLfTWlabDL_8-y1xhvr7OUAGZjP80Zmtq2WNvGoSVUC31czsQK5U64MJrETe7PW9z94-PCUzLEu_DecxHlLOhYb59s5eONO_3h2uTFyd_wLeDerhFZBztFrt-InIhsc1t1yf3-aa9ZTMjm1orNyyoK-gdBBkb69E4_87Xfx-ttVDQrbtdCybMWNM-JGrk6_AeUvScUTjH7wRHT9mkUgLyaQHBz-44e4rBTVnPPxn308YON6He9v3CuHg8X0RKlBs-HfOdGxLTtaDTgROUCQHEabeNKv8ksegLrUueOt_sUCpG8_w9ePnrDhgVMV6500nOaHCDwg5ANXIkpJTJnFzhqQPzWuoWXwCoYDOWRPRfui5YQnhYyWEeAlIMGBK1Kdq6FL_nndGPEjscuMFZvAvXixvEP_j4wuSChBRvD3BIxEw3PasbkLCMGZ8Zdn5roj6x0upg7NNp3iPzyDDLG0-HOVImbdWWxuMfT6YX5NMBbtDUp0Pgwwi3IjPCKqXfuKRVqi5cQsy4cwkSgg8rO-uQ4SnRVDToH4V5Z5suBmN3pooLs7KU4viFfWYyvVIFbCDRT0M_3GPUITvNdiW26OH2ASbP2yZf2g_40HMd1.xcFmf1fwrFL9gag2uYTj3Q","TokenType":"Bearer"},"ChallengeParameters":{}}'
+2025-07-14 16:57:02,982 DEBUG [botocore.hooks] Event needs-retry.cognito-identity-provider.InitiateAuth: calling handler <botocore.retryhandler.RetryHandler object at 0x00000236FB1238C0>
+2025-07-14 16:57:02,982 DEBUG [botocore.retryhandler] No retry needed.
+2025-07-14 16:57:02,983 INFO [__main__] Authentication successful
+2025-07-14 16:57:02,983 DEBUG [__main__] Access token: eyJraWQiOi...etFfGeaL3Q
+2025-07-14 16:57:02,983 DEBUG [__main__] Using headers: {'Authorization': '****', 'Content-Type': 'application/json', 'Accept': 'application/json', 'x-api-key': '****', 'x-access-token': '****', 'User-Agent': 'Fluidra/1.0'}
+2025-07-14 16:57:02,984 INFO [__main__] 
+Testing Consumer data...
+2025-07-14 16:57:02,984 INFO [__main__] Resolving DNS for api.fluidra-emea.com...
+2025-07-14 16:57:02,985 INFO [__main__] Successfully resolved api.fluidra-emea.com to 45.60.80.124
+2025-07-14 16:57:02,985 INFO [__main__] Testing endpoint: https://api.fluidra-emea.com/mobile/consumers/me
+2025-07-14 16:57:03,463 INFO [__main__] Response status: 200
+2025-07-14 16:57:03,463 INFO [__main__] Request successful!
+2025-07-14 16:57:03,464 INFO [__main__] Consumer data test successful!
+2025-07-14 16:57:03,464 INFO [__main__] 
+Testing Devices data...
+2025-07-14 16:57:03,465 INFO [__main__] Resolving DNS for api.fluidra-emea.com...
+2025-07-14 16:57:03,465 INFO [__main__] Successfully resolved api.fluidra-emea.com to 45.60.80.124
+2025-07-14 16:57:03,466 INFO [__main__] Testing endpoint: https://api.fluidra-emea.com/generic/devices
+2025-07-14 16:57:04,110 INFO [__main__] Response status: 200
+2025-07-14 16:57:04,111 INFO [__main__] Request successful!
+2025-07-14 16:57:04,111 INFO [__main__] Devices data test successful!

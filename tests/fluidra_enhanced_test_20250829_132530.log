@@ -1,0 +1,244 @@
+2025-08-29 13:25:30,650 DEBUG [asyncio] Using proactor: IocpProactor
+2025-08-29 13:25:30,655 INFO [__main__] Starting Enhanced Fluidra authentication test
+2025-08-29 13:25:30,656 INFO [__main__] Using Cognito configuration:
+2025-08-29 13:25:30,656 INFO [__main__]   Region: eu-west-1
+2025-08-29 13:25:30,657 INFO [__main__]   Pool ID: eu-west-1_OnopMZF9X
+2025-08-29 13:25:30,657 INFO [__main__]   Client ID: g3njunelkcbtefosqm9bdhhq1
+2025-08-29 13:25:46,406 INFO [__main__] Testing enhanced authentication...
+2025-08-29 13:25:46,407 INFO [__main__] Resolving DNS for api.fluidra-emea.com...
+2025-08-29 13:25:46,609 INFO [__main__] Successfully resolved api.fluidra-emea.com to 45.60.80.124
+2025-08-29 13:25:46,611 DEBUG [botocore.hooks] Changing event name from creating-client-class.iot-data to creating-client-class.iot-data-plane
+2025-08-29 13:25:46,612 DEBUG [botocore.hooks] Changing event name from before-call.apigateway to before-call.api-gateway
+2025-08-29 13:25:46,613 DEBUG [botocore.hooks] Changing event name from request-created.machinelearning.Predict to request-created.machine-learning.Predict
+2025-08-29 13:25:46,614 DEBUG [botocore.hooks] Changing event name from before-parameter-build.autoscaling.CreateLaunchConfiguration to before-parameter-build.auto-scaling.CreateLaunchConfiguration
+2025-08-29 13:25:46,614 DEBUG [botocore.hooks] Changing event name from before-parameter-build.route53 to before-parameter-build.route-53
+2025-08-29 13:25:46,614 DEBUG [botocore.hooks] Changing event name from request-created.cloudsearchdomain.Search to request-created.cloudsearch-domain.Search
+2025-08-29 13:25:46,615 DEBUG [botocore.hooks] Changing event name from docs.*.autoscaling.CreateLaunchConfiguration.complete-section to docs.*.auto-scaling.CreateLaunchConfiguration.complete-section
+2025-08-29 13:25:46,617 DEBUG [botocore.hooks] Changing event name from before-parameter-build.logs.CreateExportTask to before-parameter-build.cloudwatch-logs.CreateExportTask
+2025-08-29 13:25:46,617 DEBUG [botocore.hooks] Changing event name from docs.*.logs.CreateExportTask.complete-section to docs.*.cloudwatch-logs.CreateExportTask.complete-section
+2025-08-29 13:25:46,618 DEBUG [botocore.hooks] Changing event name from before-parameter-build.cloudsearchdomain.Search to before-parameter-build.cloudsearch-domain.Search
+2025-08-29 13:25:46,618 DEBUG [botocore.hooks] Changing event name from docs.*.cloudsearchdomain.Search.complete-section to docs.*.cloudsearch-domain.Search.complete-section
+2025-08-29 13:25:46,621 DEBUG [botocore.utils] IMDS ENDPOINT: http://169.254.169.254/
+2025-08-29 13:25:46,623 DEBUG [botocore.credentials] Looking for credentials via: env
+2025-08-29 13:25:46,624 DEBUG [botocore.credentials] Looking for credentials via: assume-role
+2025-08-29 13:25:46,624 DEBUG [botocore.credentials] Looking for credentials via: assume-role-with-web-identity
+2025-08-29 13:25:46,624 DEBUG [botocore.credentials] Looking for credentials via: sso
+2025-08-29 13:25:46,624 DEBUG [botocore.credentials] Looking for credentials via: shared-credentials-file
+2025-08-29 13:25:46,625 DEBUG [botocore.credentials] Looking for credentials via: custom-process
+2025-08-29 13:25:46,625 DEBUG [botocore.credentials] Looking for credentials via: config-file
+2025-08-29 13:25:46,625 DEBUG [botocore.credentials] Looking for credentials via: ec2-credentials-file
+2025-08-29 13:25:46,625 DEBUG [botocore.credentials] Looking for credentials via: boto-config
+2025-08-29 13:25:46,626 DEBUG [botocore.credentials] Looking for credentials via: container-role
+2025-08-29 13:25:46,626 DEBUG [botocore.credentials] Looking for credentials via: iam-role
+2025-08-29 13:25:46,627 DEBUG [urllib3.connectionpool] Starting new HTTP connection (1): 169.254.169.254:80
+2025-08-29 13:25:46,628 DEBUG [botocore.utils] Caught retryable HTTP exception while making metadata service request to http://169.254.169.254/latest/api/token: Could not connect to the endpoint URL: "http://169.254.169.254/latest/api/token"
+Traceback (most recent call last):
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connection.py", line 198, in _new_conn
+    sock = connection.create_connection(
+        (self._dns_host, self.port),
+    ...<2 lines>...
+        socket_options=self.socket_options,
+    )
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\util\connection.py", line 85, in create_connection
+    raise err
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\util\connection.py", line 73, in create_connection
+    sock.connect(sa)
+    ~~~~~~~~~~~~^^^^
+OSError: [WinError 10051] A socket operation was attempted to an unreachable network
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\httpsession.py", line 464, in send
+    urllib_response = conn.urlopen(
+        method=request.method,
+    ...<7 lines>...
+        chunked=self._chunked(request.headers),
+    )
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\util\retry.py", line 449, in increment
+    raise reraise(type(error), error, _stacktrace)
+          ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\util\util.py", line 39, in reraise
+    raise value
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connectionpool.py", line 493, in _make_request
+    conn.request(
+    ~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<6 lines>...
+        enforce_content_length=enforce_content_length,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\awsrequest.py", line 96, in request
+    rval = super().request(method, url, body, headers, *args, **kwargs)
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connection.py", line 445, in request
+    self.endheaders()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\http\client.py", line 1333, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\awsrequest.py", line 123, in _send_output
+    self.send(msg)
+    ~~~~~~~~~^^^^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\awsrequest.py", line 223, in send
+    return super().send(str)
+           ~~~~~~~~~~~~^^^^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\http\client.py", line 1037, in send
+    self.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connection.py", line 276, in connect
+    self.sock = self._new_conn()
+                ~~~~~~~~~~~~~~^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connection.py", line 213, in _new_conn
+    raise NewConnectionError(
+        self, f"Failed to establish a new connection: {e}"
+    ) from e
+urllib3.exceptions.NewConnectionError: <botocore.awsrequest.AWSHTTPConnection object at 0x000001FF7BE94EC0>: Failed to establish a new connection: [WinError 10051] A socket operation was attempted to an unreachable network
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\utils.py", line 463, in _fetch_metadata_token
+    response = self._session.send(request.prepare())
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\httpsession.py", line 493, in send
+    raise EndpointConnectionError(endpoint_url=request.url, error=e)
+botocore.exceptions.EndpointConnectionError: Could not connect to the endpoint URL: "http://169.254.169.254/latest/api/token"
+2025-08-29 13:25:46,859 DEBUG [urllib3.connectionpool] Starting new HTTP connection (2): 169.254.169.254:80
+2025-08-29 13:25:46,860 DEBUG [botocore.utils] Caught retryable HTTP exception while making metadata service request to http://169.254.169.254/latest/meta-data/iam/security-credentials/: Could not connect to the endpoint URL: "http://169.254.169.254/latest/meta-data/iam/security-credentials/"
+Traceback (most recent call last):
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connection.py", line 198, in _new_conn
+    sock = connection.create_connection(
+        (self._dns_host, self.port),
+    ...<2 lines>...
+        socket_options=self.socket_options,
+    )
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\util\connection.py", line 85, in create_connection
+    raise err
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\util\connection.py", line 73, in create_connection
+    sock.connect(sa)
+    ~~~~~~~~~~~~^^^^
+OSError: [WinError 10051] A socket operation was attempted to an unreachable network
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\httpsession.py", line 464, in send
+    urllib_response = conn.urlopen(
+        method=request.method,
+    ...<7 lines>...
+        chunked=self._chunked(request.headers),
+    )
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\util\retry.py", line 449, in increment
+    raise reraise(type(error), error, _stacktrace)
+          ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\util\util.py", line 39, in reraise
+    raise value
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connectionpool.py", line 493, in _make_request
+    conn.request(
+    ~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<6 lines>...
+        enforce_content_length=enforce_content_length,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\awsrequest.py", line 96, in request
+    rval = super().request(method, url, body, headers, *args, **kwargs)
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connection.py", line 445, in request
+    self.endheaders()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\http\client.py", line 1333, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\awsrequest.py", line 123, in _send_output
+    self.send(msg)
+    ~~~~~~~~~^^^^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\awsrequest.py", line 223, in send
+    return super().send(str)
+           ~~~~~~~~~~~~^^^^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\http\client.py", line 1037, in send
+    self.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connection.py", line 276, in connect
+    self.sock = self._new_conn()
+                ~~~~~~~~~~~~~~^^
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\urllib3\connection.py", line 213, in _new_conn
+    raise NewConnectionError(
+        self, f"Failed to establish a new connection: {e}"
+    ) from e
+urllib3.exceptions.NewConnectionError: <botocore.awsrequest.AWSHTTPConnection object at 0x000001FF7BE62D50>: Failed to establish a new connection: [WinError 10051] A socket operation was attempted to an unreachable network
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\utils.py", line 518, in _get_request
+    response = self._session.send(request.prepare())
+  File "C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\httpsession.py", line 493, in send
+    raise EndpointConnectionError(endpoint_url=request.url, error=e)
+botocore.exceptions.EndpointConnectionError: Could not connect to the endpoint URL: "http://169.254.169.254/latest/meta-data/iam/security-credentials/"
+2025-08-29 13:25:46,864 DEBUG [botocore.utils] Max number of attempts exceeded (1) when attempting to retrieve data from metadata service.
+2025-08-29 13:25:46,889 DEBUG [botocore.loaders] Loading JSON file: C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\data\endpoints.json
+2025-08-29 13:25:46,936 DEBUG [botocore.loaders] Loading JSON file: C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\data\sdk-default-configuration.json
+2025-08-29 13:25:46,937 DEBUG [botocore.hooks] Event choose-service-name: calling handler <function handle_service_name_alias at 0x000001FF7BDA2AC0>
+2025-08-29 13:25:47,102 DEBUG [botocore.loaders] Loading JSON file: C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\data\cognito-idp\2016-04-18\service-2.json.gz
+2025-08-29 13:25:47,206 DEBUG [botocore.loaders] Loading JSON file: C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\data\cognito-idp\2016-04-18\endpoint-rule-set-1.json.gz
+2025-08-29 13:25:47,228 DEBUG [botocore.loaders] Loading JSON file: C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\data\partitions.json
+2025-08-29 13:25:47,230 DEBUG [botocore.hooks] Event creating-client-class.cognito-identity-provider: calling handler <function add_generate_presigned_url at 0x000001FF7BD19940>
+2025-08-29 13:25:47,231 DEBUG [botocore.configprovider] Looking for endpoint for cognito-idp via: environment_service
+2025-08-29 13:25:47,231 DEBUG [botocore.configprovider] Looking for endpoint for cognito-idp via: environment_global
+2025-08-29 13:25:47,232 DEBUG [botocore.configprovider] Looking for endpoint for cognito-idp via: config_service
+2025-08-29 13:25:47,232 DEBUG [botocore.configprovider] Looking for endpoint for cognito-idp via: config_global
+2025-08-29 13:25:47,232 DEBUG [botocore.configprovider] No configured endpoint found.
+2025-08-29 13:25:47,234 DEBUG [botocore.endpoint] Setting cognito-idp timeout as (60, 60)
+2025-08-29 13:25:47,258 DEBUG [botocore.loaders] Loading JSON file: C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\botocore\data\_retry.json
+2025-08-29 13:25:47,259 DEBUG [botocore.client] Registering retry handlers for service: cognito-idp
+2025-08-29 13:25:47,260 INFO [__main__] Starting authentication process
+2025-08-29 13:25:47,261 DEBUG [botocore.hooks] Event before-parameter-build.cognito-identity-provider.InitiateAuth: calling handler <function generate_idempotent_uuid at 0x000001FF7BDA3100>
+2025-08-29 13:25:47,261 DEBUG [botocore.hooks] Event before-parameter-build.cognito-identity-provider.InitiateAuth: calling handler <function _handle_request_validation_mode_member at 0x000001FF7BDD1C60>
+2025-08-29 13:25:47,261 DEBUG [botocore.regions] Calling endpoint provider with parameters: {'Region': 'eu-west-1', 'UseDualStack': False, 'UseFIPS': False}
+2025-08-29 13:25:47,262 DEBUG [botocore.regions] Endpoint provider result: https://cognito-idp.eu-west-1.amazonaws.com
+2025-08-29 13:25:47,263 DEBUG [botocore.hooks] Event before-call.cognito-identity-provider.InitiateAuth: calling handler <function add_recursion_detection_header at 0x000001FF7BDA2CA0>
+2025-08-29 13:25:47,263 DEBUG [botocore.hooks] Event before-call.cognito-identity-provider.InitiateAuth: calling handler <function inject_api_version_header_if_needed at 0x000001FF7BDD0C20>
+2025-08-29 13:25:47,263 DEBUG [botocore.endpoint] Making request for OperationModel(name=InitiateAuth) with params: {'url_path': '/', 'query_string': '', 'method': 'POST', 'headers': {'X-Amz-Target': 'AWSCognitoIdentityProviderService.InitiateAuth', 'Content-Type': 'application/x-amz-json-1.1', 'User-Agent': 'Boto3/1.39.3 md/Botocore#1.39.3 ua/2.1 os/windows#11 md/arch#amd64 lang/python#3.13.2 md/pyimpl#CPython m/D,Z,b cfg/retry-mode#legacy Botocore/1.39.3'}, 'body': b'{"ClientId": "g3njunelkcbtefosqm9bdhhq1", "AuthFlow": "USER_PASSWORD_AUTH", "AuthParameters": {"USERNAME": "thomasroager@gmail.com", "PASSWORD": "S0davand"}}', 'url': 'https://cognito-idp.eu-west-1.amazonaws.com/', 'context': {'client_region': 'eu-west-1', 'client_config': <botocore.config.Config object at 0x000001FF7BE96510>, 'has_streaming_input': False, 'auth_type': 'none', 'unsigned_payload': None, 'auth_options': ['aws.auth#sigv4']}}
+2025-08-29 13:25:47,264 DEBUG [botocore.hooks] Event request-created.cognito-identity-provider.InitiateAuth: calling handler <bound method RequestSigner.handler of <botocore.signers.RequestSigner object at 0x000001FF7BE963C0>>
+2025-08-29 13:25:47,264 DEBUG [botocore.hooks] Event choose-signer.cognito-identity-provider.InitiateAuth: calling handler <function set_operation_specific_signer at 0x000001FF7BDA2F20>
+2025-08-29 13:25:47,264 DEBUG [botocore.hooks] Event request-created.cognito-identity-provider.InitiateAuth: calling handler <bound method UserAgentString.rebuild_and_replace_user_agent_handler of <botocore.useragent.UserAgentString object at 0x000001FF7C94D810>>
+2025-08-29 13:25:47,265 DEBUG [botocore.hooks] Event request-created.cognito-identity-provider.InitiateAuth: calling handler <function add_retry_headers at 0x000001FF7BDD14E0>
+2025-08-29 13:25:47,265 DEBUG [botocore.endpoint] Sending http request: <AWSPreparedRequest stream_output=False, method=POST, url=https://cognito-idp.eu-west-1.amazonaws.com/, headers={'X-Amz-Target': b'AWSCognitoIdentityProviderService.InitiateAuth', 'Content-Type': b'application/x-amz-json-1.1', 'User-Agent': b'Boto3/1.39.3 md/Botocore#1.39.3 ua/2.1 os/windows#11 md/arch#amd64 lang/python#3.13.2 md/pyimpl#CPython m/D,Z,b cfg/retry-mode#legacy Botocore/1.39.3', 'amz-sdk-invocation-id': b'7a4fdec7-2b03-45f6-857d-d3ea24dda460', 'amz-sdk-request': b'attempt=1', 'Content-Length': '157'}>
+2025-08-29 13:25:47,271 DEBUG [botocore.httpsession] Certificate path: C:\Users\roagert\AppData\Local\miniconda3\Lib\site-packages\certifi\cacert.pem
+2025-08-29 13:25:47,271 DEBUG [urllib3.connectionpool] Starting new HTTPS connection (1): cognito-idp.eu-west-1.amazonaws.com:443
+2025-08-29 13:25:48,000 DEBUG [urllib3.connectionpool] https://cognito-idp.eu-west-1.amazonaws.com:443 "POST / HTTP/1.1" 400 79
+2025-08-29 13:25:48,000 DEBUG [botocore.parsers] Response headers: {'Date': 'Fri, 29 Aug 2025 11:25:48 GMT', 'Content-Type': 'application/x-amz-json-1.1', 'Content-Length': '79', 'Connection': 'keep-alive', 'x-amzn-RequestId': 'c46709de-adeb-4cb4-adf0-7b6a24f562d3', 'x-amzn-ErrorType': 'NotAuthorizedException:', 'x-amzn-ErrorMessage': 'Incorrect username or password.'}
+2025-08-29 13:25:48,001 DEBUG [botocore.parsers] Response body:
+b'{"__type":"NotAuthorizedException","message":"Incorrect username or password."}'
+2025-08-29 13:25:48,003 DEBUG [botocore.parsers] Response headers: {'Date': 'Fri, 29 Aug 2025 11:25:48 GMT', 'Content-Type': 'application/x-amz-json-1.1', 'Content-Length': '79', 'Connection': 'keep-alive', 'x-amzn-RequestId': 'c46709de-adeb-4cb4-adf0-7b6a24f562d3', 'x-amzn-ErrorType': 'NotAuthorizedException:', 'x-amzn-ErrorMessage': 'Incorrect username or password.'}
+2025-08-29 13:25:48,004 DEBUG [botocore.parsers] Response body:
+b'{"__type":"NotAuthorizedException","message":"Incorrect username or password."}'
+2025-08-29 13:25:48,005 DEBUG [botocore.hooks] Event needs-retry.cognito-identity-provider.InitiateAuth: calling handler <botocore.retryhandler.RetryHandler object at 0x000001FF7C7B81A0>
+2025-08-29 13:25:48,005 DEBUG [botocore.retryhandler] No retry needed.
+2025-08-29 13:25:48,007 ERROR [__main__] AWS Cognito authentication failed - Code: NotAuthorizedException, Message: Incorrect username or password.
+2025-08-29 13:25:48,010 ERROR [__main__] Authentication failed
+2025-08-29 13:25:48,010 ERROR [__main__] Enhanced authentication failed
+2025-08-29 13:25:48,010 ERROR [__main__] Enhanced tests failed!
