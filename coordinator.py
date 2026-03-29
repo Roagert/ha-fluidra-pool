@@ -9,9 +9,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.exceptions import ConfigEntryAuthFailed
 
+import json
+
 from .const import (
-    API_DEVICES_URL, 
-    API_CONSUMER_URL, 
+    API_DEVICES_URL,
+    API_CONSUMER_URL,
     API_ENDPOINT_USER_PROFILE,
     API_ENDPOINT_POOL_STATUS,
     API_ENDPOINT_USER_POOLS,
@@ -29,7 +31,10 @@ from .const import (
     CONF_COMPONENT_ID,
     CONF_UPDATE_INTERVAL,
     CONF_API_RATE_LIMIT,
-    ERROR_CODES
+    ERROR_CODES,
+    WS_URL,
+    WS_RECONNECT_DELAY,
+    WS_MAX_RECONNECT_ATTEMPTS,
 )
 from .auth import FluidraAuth
 
@@ -101,13 +106,107 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
         # Quick update management
         self.quick_update_scheduled = False
         self.quick_update_task = None
-        
+
+        # WebSocket real-time updates
+        self._ws_task: Optional[asyncio.Task] = None
+        self._ws_running = False
+
     async def async_shutdown(self) -> None:
         """Shutdown the coordinator."""
+        self._ws_running = False
+        if self._ws_task and not self._ws_task.done():
+            self._ws_task.cancel()
+            try:
+                await self._ws_task
+            except asyncio.CancelledError:
+                pass
         if self.quick_update_task and not self.quick_update_task.done():
             self.quick_update_task.cancel()
         await self.session.close()
         await super().async_shutdown()
+
+    # ── WebSocket real-time updates ───────────────────────────────────────────
+
+    def _start_websocket(self) -> None:
+        """Start the WebSocket listener task if not already running."""
+        if self._ws_task is None or self._ws_task.done():
+            self._ws_running = True
+            self._ws_task = self.hass.async_create_task(self._ws_listener())
+            _LOGGER.info("WebSocket listener task started")
+
+    async def _ws_listener(self) -> None:
+        """Maintain a persistent WebSocket connection to the Fluidra cloud."""
+        attempts = 0
+        while self._ws_running and attempts < WS_MAX_RECONNECT_ATTEMPTS:
+            try:
+                await self.auth.authenticate()
+                token = self.auth.access_token
+                if not token:
+                    _LOGGER.warning("WebSocket: no auth token, retrying in %ds", WS_RECONNECT_DELAY)
+                    await asyncio.sleep(WS_RECONNECT_DELAY)
+                    attempts += 1
+                    continue
+
+                headers = {"Authorization": f"Bearer {token}"}
+                async with self.session.ws_connect(WS_URL, headers=headers, heartbeat=30) as ws:
+                    _LOGGER.info("WebSocket connected to %s", WS_URL)
+                    attempts = 0  # reset on successful connect
+
+                    # Subscribe to all known devices
+                    for device_id in self.devices:
+                        sub_msg = json.dumps({
+                            "action": "subsDevice",
+                            "deviceType": "connected",
+                            "deviceId": device_id,
+                        })
+                        await ws.send_str(sub_msg)
+                        _LOGGER.debug("WebSocket subscribed to device %s", device_id)
+
+                    async for msg in ws:
+                        if msg.type == aiohttp.WSMsgType.TEXT:
+                            await self._ws_handle_message(msg.data)
+                        elif msg.type == aiohttp.WSMsgType.ERROR:
+                            _LOGGER.error("WebSocket error: %s", ws.exception())
+                            break
+                        elif msg.type in (aiohttp.WSMsgType.CLOSE, aiohttp.WSMsgType.CLOSED):
+                            _LOGGER.info("WebSocket closed")
+                            break
+
+            except asyncio.CancelledError:
+                return
+            except Exception as exc:
+                _LOGGER.warning("WebSocket disconnected: %s — reconnecting in %ds", exc, WS_RECONNECT_DELAY)
+
+            if self._ws_running:
+                await asyncio.sleep(WS_RECONNECT_DELAY)
+                attempts += 1
+
+        if attempts >= WS_MAX_RECONNECT_ATTEMPTS:
+            _LOGGER.error("WebSocket: max reconnect attempts reached; falling back to polling")
+
+    async def _ws_handle_message(self, raw: str) -> None:
+        """Process an incoming WebSocket message and update component state."""
+        try:
+            event = json.loads(raw)
+        except json.JSONDecodeError:
+            _LOGGER.debug("WebSocket: non-JSON message ignored")
+            return
+
+        device_id = event.get("deviceId") or event.get("device_id")
+        component_id = event.get("componentId") or event.get("id")
+        reported = event.get("reportedValue") if "reportedValue" in event else event.get("value")
+
+        if device_id and component_id is not None and reported is not None:
+            if device_id not in self.device_components_data:
+                self.device_components_data[device_id] = {}
+            comp_key = int(component_id) if str(component_id).isdigit() else component_id
+            existing = self.device_components_data[device_id].get(comp_key, {})
+            if isinstance(existing, dict):
+                existing["reportedValue"] = reported
+            else:
+                self.device_components_data[device_id][comp_key] = {"reportedValue": reported}
+            _LOGGER.debug("WebSocket update: device=%s component=%s value=%s", device_id, comp_key, reported)
+            self.async_set_updated_data(self.data)
     
     def _check_rate_limit(self) -> bool:
         """Check if we can make an API call based on rate limiting."""
@@ -256,10 +355,12 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
             if fetch_results.get('devices', False):
                 _LOGGER.info("[Fluidra Debug] Update completed successfully (core data fetched) at %s", datetime.now())
                 _LOGGER.info("[Fluidra Debug] Fetch results: %s", fetch_results)
-                _LOGGER.info("[Fluidra Debug] Data fetched - devices: %s, components: %s, errors: %s", 
+                _LOGGER.info("[Fluidra Debug] Data fetched - devices: %s, components: %s, errors: %s",
                             len(self.devices) if self.devices else 0,
                             len(self.device_components_data) if self.device_components_data else 0,
                             len(self.error_information) if self.error_information else 0)
+                # Start WebSocket listener on first successful fetch
+                self._start_websocket()
                 return data
             else:
                 raise UpdateFailed("Failed to fetch core device data")

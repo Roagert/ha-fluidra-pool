@@ -212,38 +212,22 @@ class FluidraBaseClimate:
         
         return False
 
-    def _determine_smart_auto_mode(self) -> str:
-        """Determine heat/cool mode for Smart Auto based on temperature comparison."""
+    def _determine_smart_auto_mode(self) -> HVACMode:
+        """Return HVACMode.HEAT or COOL based on temperature delta (used for hvac_action only)."""
         current_temp = self.current_temperature
         target_temp = self.target_temperature
-        
+
         if current_temp is None or target_temp is None:
-            _LOGGER.debug("Smart Auto: Missing temperature data (current=%s, target=%s)", current_temp, target_temp)
-            return "heat"  # Default to heat if we can't determine
-        
+            return HVACMode.HEAT
+
         temp_diff = target_temp - current_temp
-        _LOGGER.debug("Smart Auto: current=%.1f°C, target=%.1f°C, diff=%.1f°C, deadband=%.1f°C", 
-                     current_temp, target_temp, temp_diff, SMART_AUTO_DEADBAND)
-        
-        # Use deadband to prevent rapid switching
         if temp_diff > SMART_AUTO_DEADBAND:
-            _LOGGER.debug("Smart Auto: Need heating (diff=%.1f°C > deadband=%.1f°C)", temp_diff, SMART_AUTO_DEADBAND)
-            return "heat"
+            return HVACMode.HEAT
         elif temp_diff < -SMART_AUTO_DEADBAND:
-            _LOGGER.debug("Smart Auto: Need cooling (diff=%.1f°C < -deadband=%.1f°C)", temp_diff, SMART_AUTO_DEADBAND)
-            return "cool"
+            return HVACMode.COOL
         else:
-            # Within deadband - maintain current mode or default to heat
-            _LOGGER.debug("Smart Auto: Within deadband (%.1f°C), maintaining current state", SMART_AUTO_DEADBAND)
-            
-            # Check if we can determine what the device is currently doing
-            hvac_action = self.hvac_action
-            if hvac_action == "heating":
-                return "heat"
-            elif hvac_action == "cooling":
-                return "cool"
-            else:
-                return "heat"  # Default to heat when idle
+            # Within deadband — check hvac_action to avoid recursion
+            return HVACMode.HEAT
 
     def _log_all_components(self):
         actual_device_id = self._get_actual_device_id()
@@ -286,7 +270,7 @@ class FluidraClimatePlaceholder(FluidraBaseClimate, ClimateEntity):
         ClimateEntityFeature.TURN_OFF
     )
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
-    _attr_hvac_modes = ["heat", "cool", "off"]
+    _attr_hvac_modes = [HVACMode.AUTO, HVACMode.HEAT, HVACMode.COOL, HVACMode.OFF]
     _attr_min_temp = 8.1  # From UI config: component 81 = 7°C + factor
     _attr_max_temp = 40.0  # From UI config: component 82 = 40°C
     _attr_target_temperature_step = 0.1
@@ -297,8 +281,8 @@ class FluidraClimatePlaceholder(FluidraBaseClimate, ClimateEntity):
         self._attr_unique_id = self._get_unique_id("climate_heatpump")
         self._attr_current_temperature = None
         self._attr_target_temperature = 25.0
-        self._attr_hvac_mode = "off"
-        self._attr_hvac_action = "off"
+        self._attr_hvac_mode = HVACMode.OFF
+        self._attr_hvac_action = HVACAction.OFF
         self._attr_preset_mode = None
         self._component_id = None
         self._mode_mapping = {}
@@ -361,30 +345,29 @@ class FluidraClimatePlaceholder(FluidraBaseClimate, ClimateEntity):
         """Return hvac operation mode."""
         # First check if device is operationally off due to errors
         if self._is_device_operationally_off():
-            return "off"
-        
+            return HVACMode.OFF
+
         # Check power status (component ID 13)
         actual_device_id = self._get_actual_device_id()
         if self.coordinator.device_components_data and actual_device_id:
             device_components = self.coordinator.device_components_data.get(actual_device_id, {})
             component_data = device_components.get(13) or device_components.get("13")
-            
+
             if isinstance(component_data, dict):
                 reported_value = component_data.get('reportedValue')
                 if reported_value == 0:
-                    return "off"
+                    return HVACMode.OFF
         
         # If powered on and no critical errors, check preset mode
         current_preset = self.preset_mode
         if current_preset:
-            # Handle Smart Auto mode with temperature-based logic
             if current_preset == "Smart Auto":
-                return self._determine_smart_auto_mode()
+                return HVACMode.AUTO
             elif "heating" in current_preset.lower():
-                return "heat"
+                return HVACMode.HEAT
             elif "cooling" in current_preset.lower():
-                return "cool"
-        return "off"
+                return HVACMode.COOL
+        return HVACMode.OFF
     
     @property
     def hvac_action(self) -> str:
@@ -398,16 +381,19 @@ class FluidraClimatePlaceholder(FluidraBaseClimate, ClimateEntity):
             if isinstance(component_data, dict):
                 reported_value = component_data.get('reportedValue')
                 if reported_value == 0:
-                    return "off"
-        
-        # If powered on, check preset mode
+                    return HVACAction.OFF
+
+        # If powered on, check preset mode (Smart Auto uses temperature logic for action)
         current_preset = self.preset_mode
         if current_preset:
-            if "heating" in current_preset.lower():
-                return "heating"
+            if current_preset == "Smart Auto":
+                smart_direction = self._determine_smart_auto_mode()
+                return HVACAction.HEATING if smart_direction == HVACMode.HEAT else HVACAction.COOLING
+            elif "heating" in current_preset.lower():
+                return HVACAction.HEATING
             elif "cooling" in current_preset.lower():
-                return "cooling"
-        return "off"
+                return HVACAction.COOLING
+        return HVACAction.OFF
     
     @property
     def preset_modes(self) -> list:
@@ -521,31 +507,26 @@ class FluidraClimatePlaceholder(FluidraBaseClimate, ClimateEntity):
             _LOGGER.error("No actual device ID found for device %s", self.device_id)
             return
         
-        # Handle power on/off via component ID 13
-        if hvac_mode == "off":
-            # Turn off the unit by setting desiredValue to 0
-            success = await self.coordinator.set_power_value(
-                actual_device_id,
-                13,  # Component ID 13 for power
-                0  # desiredValue = 0 to turn off
-            )
-            
+        # Handle power on/off via component ID 13; auto maps to Smart Auto preset
+        if hvac_mode == HVACMode.OFF:
+            success = await self.coordinator.set_power_value(actual_device_id, 13, 0)
             if success:
-                # Schedule immediate refresh to show power state change
                 await self.coordinator.schedule_quick_update()
                 _LOGGER.info("Power off successful, quick update scheduled")
             else:
                 _LOGGER.error("Failed to turn off the heat pump")
-        elif hvac_mode in ["heat", "cool"]:
-            # Turn on the unit by setting desiredValue to 1
-            success = await self.coordinator.set_power_value(
-                actual_device_id,
-                13,  # Component ID 13 for power
-                1  # desiredValue = 1 to turn on
-            )
-            
+        elif hvac_mode == HVACMode.AUTO:
+            # Power on and activate Smart Auto (component 14 = 2)
+            await self.coordinator.set_power_value(actual_device_id, 13, 1)
+            success = await self.coordinator.set_component_value(actual_device_id, 14, SMART_AUTO_MODE_VALUE)
             if success:
-                # Schedule immediate refresh to show power state change
+                await self.coordinator.schedule_quick_update()
+                _LOGGER.info("Smart Auto mode activated")
+            else:
+                _LOGGER.error("Failed to activate Smart Auto mode")
+        elif hvac_mode in [HVACMode.HEAT, HVACMode.COOL]:
+            success = await self.coordinator.set_power_value(actual_device_id, 13, 1)
+            if success:
                 await self.coordinator.schedule_quick_update()
                 _LOGGER.info("Power on successful, quick update scheduled")
             else:

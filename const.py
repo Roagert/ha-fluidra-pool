@@ -38,6 +38,11 @@ MAX_SCAN_INTERVAL = timedelta(hours=2)  # Maximum 2 hours
 QUICK_UPDATE_INTERVAL = timedelta(seconds=1)  # 1 second after control commands (immediate feedback)
 TOKEN_REFRESH_THRESHOLD = timedelta(minutes=10)
 
+# WebSocket configuration
+WS_URL = "wss://ws.fluidra-emea.com"
+WS_RECONNECT_DELAY = 5  # seconds between reconnect attempts
+WS_MAX_RECONNECT_ATTEMPTS = 10
+
 # API Rate Limiting
 DEFAULT_API_RATE_LIMIT = 60  # requests per minute
 MIN_API_RATE_LIMIT = 10  # minimum requests per minute
