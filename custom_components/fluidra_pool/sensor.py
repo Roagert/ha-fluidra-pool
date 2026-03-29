@@ -8,7 +8,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
     SensorDeviceClass,
 )
-from homeassistant.const import EntityCategory
+from homeassistant.const import EntityCategory, UnitOfTemperature
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -34,10 +34,6 @@ async def async_setup_entry(
     entities.append(FluidraErrorSensor(coordinator, device_id))    # Always needed for error monitoring
     
     # Conditionally create entities based on data availability
-    if coordinator.consumer_data:
-        entities.append(FluidraConsumerSensor(coordinator, device_id))
-        _LOGGER.info("Adding Consumer Data sensor - data available")
-    
     if coordinator.user_profile_data:
         entities.append(FluidraUserProfileSensor(coordinator, device_id))
         _LOGGER.info("Adding User Profile sensor - data available")
@@ -57,7 +53,19 @@ async def async_setup_entry(
     if coordinator.device_uiconfig_data:
         entities.append(FluidraDeviceUIConfigSensor(coordinator, device_id))
         _LOGGER.info("Adding Device UI Config sensor - data available")
-    
+
+    # Always add water temperature sensor (component 19)
+    entities.append(FluidraWaterTemperatureSensor(coordinator, device_id))
+
+    # Add chlorinator sensors when component data is available
+    if coordinator.device_components_data:
+        entities.extend([
+            FluidraChlorinatorSensor(coordinator, device_id, "pH", "ph_key", None, None),
+            FluidraChlorinatorSensor(coordinator, device_id, "ORP", "orp_key", "mV", SensorDeviceClass.VOLTAGE),
+            FluidraChlorinatorSensor(coordinator, device_id, "Salinity", "salinity_key", "g/L", None),
+            FluidraChlorinatorSensor(coordinator, device_id, "Free Chlorine", "free_chlorine_key", "ppm", None),
+        ])
+
     _LOGGER.info("Creating %d sensor entities based on available data", len(entities))
     async_add_entities(entities)
 
@@ -132,44 +140,6 @@ class FluidraBaseEntity:
 # ============================================================================
 # API ENDPOINT SENSORS (8 sensors)
 # ============================================================================
-
-class FluidraConsumerSensor(FluidraBaseEntity, SensorEntity):
-    """Sensor containing all consumer API data."""
-    
-    _attr_name = "Consumer Data"
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-    
-    def __init__(self, coordinator, device_id: Optional[str] = None):
-        super().__init__(coordinator, device_id)
-        self._attr_unique_id = self._get_unique_id("consumer_data")
-    
-    @property
-    def native_value(self) -> str:
-        """Return the state of the sensor."""
-        if self.coordinator.consumer_data:
-            return "Available"
-        return "Not Available"
-    
-    @property
-    def extra_state_attributes(self) -> Optional[Dict[str, Any]]:
-        """Return additional state attributes."""
-        attrs = {
-            "last_update": self.coordinator.last_update_success,
-            "last_refreshed": datetime.now(timezone.utc).isoformat(),
-        }
-        
-        # Add only essential consumer summary (not full data to avoid 16KB limit)
-        if hasattr(self, 'coordinator') and hasattr(self.coordinator, 'consumer_data') and self.coordinator.consumer_data:
-            consumer_data = self.coordinator.consumer_data
-            attrs["consumer_summary"] = {
-                "has_data": True,
-                "account_available": bool(consumer_data.get("id")),
-                "profile_complete": bool(consumer_data.get("name") or consumer_data.get("email")),
-            }
-        else:
-            attrs["consumer_summary"] = {"has_data": False}
-        
-        return attrs
 
 class FluidraDevicesSensor(FluidraBaseEntity, SensorEntity):
     """Sensor containing all devices API data."""
@@ -452,4 +422,118 @@ class FluidraErrorSensor(FluidraBaseEntity, SensorEntity):
             "title": "No Error",
             "text": "System is operating normally",
             "last_update": self.coordinator.last_update_success,
-        } 
+        }
+
+
+class FluidraWaterTemperatureSensor(FluidraBaseEntity, SensorEntity):
+    """Standalone water temperature sensor (component 19)."""
+
+    _attr_name = "Water Temperature"
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+    _attr_device_class = SensorDeviceClass.TEMPERATURE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(self, coordinator, device_id: Optional[str] = None):
+        super().__init__(coordinator, device_id)
+        self._attr_unique_id = self._get_unique_id("water_temperature")
+
+    def _get_component_value(self, component_id: int) -> Optional[float]:
+        actual_device_id = self._get_actual_device_id()
+        if not self.coordinator.device_components_data or not actual_device_id:
+            return None
+        components = self.coordinator.device_components_data.get(actual_device_id, {})
+        data = components.get(component_id) or components.get(str(component_id))
+        if isinstance(data, dict):
+            raw = data.get("reportedValue")
+            if raw is not None:
+                return round(raw / 10.0, 1)
+        return None
+
+    @property
+    def native_value(self) -> Optional[float]:
+        """Return water temperature in °C (component 19, raw × 0.1)."""
+        return self._get_component_value(19)
+
+
+# Map from sensor name → (i18n key prefix, unit, device_class)
+_CHLORINATOR_COMPONENT_MAP = {
+    "ph_key": (None, "pH"),
+    "orp_key": (None, "mV"),
+    "salinity_key": (None, "g/L"),
+    "free_chlorine_key": (None, "ppm"),
+}
+
+
+class FluidraChlorinatorSensor(FluidraBaseEntity, SensorEntity):
+    """Sensor for a single chlorinator measurement (pH, ORP, salinity, free chlorine).
+
+    Component IDs are resolved at runtime from the UI config data, keyed by
+    i18n key (e.g. 'ph_key').  If the device does not have the component the
+    sensor will remain unavailable rather than raising an error.
+    """
+
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(
+        self,
+        coordinator,
+        device_id: Optional[str],
+        friendly_name: str,
+        i18n_key: str,
+        unit: Optional[str],
+        device_class: Optional[str],
+    ):
+        super().__init__(coordinator, device_id)
+        self._friendly_name = friendly_name
+        self._i18n_key = i18n_key
+        self._attr_name = friendly_name
+        self._attr_native_unit_of_measurement = unit
+        self._attr_device_class = device_class
+        self._attr_unique_id = self._get_unique_id(f"chlorinator_{i18n_key}")
+        self._resolved_component_id: Optional[int] = None
+
+    def _resolve_component_id(self) -> Optional[int]:
+        """Find component ID from uiconfig by matching the i18n key."""
+        if self._resolved_component_id is not None:
+            return self._resolved_component_id
+        if not self.coordinator.device_uiconfig_data:
+            return None
+        actual_device_id = self._get_actual_device_id()
+        if not actual_device_id:
+            return None
+        uiconfig = self.coordinator.device_uiconfig_data.get(actual_device_id, {})
+        # Walk all UI components looking for a matching i18n key
+        for item in uiconfig.get("components", []) if isinstance(uiconfig, dict) else []:
+            i18n = item.get("i18n", {})
+            if isinstance(i18n, dict):
+                for lang_data in i18n.values():
+                    if isinstance(lang_data, dict) and lang_data.get("key") == self._i18n_key:
+                        comp_id = item.get("componentRead") or item.get("readId")
+                        if comp_id is not None:
+                            self._resolved_component_id = int(comp_id)
+                            return self._resolved_component_id
+        return None
+
+    @property
+    def available(self) -> bool:
+        """Only available when we can resolve the component ID."""
+        return super().available and self._resolve_component_id() is not None
+
+    @property
+    def native_value(self) -> Optional[float]:
+        """Return the sensor value from the components data."""
+        comp_id = self._resolve_component_id()
+        if comp_id is None:
+            return None
+        actual_device_id = self._get_actual_device_id()
+        if not self.coordinator.device_components_data or not actual_device_id:
+            return None
+        components = self.coordinator.device_components_data.get(actual_device_id, {})
+        data = components.get(comp_id) or components.get(str(comp_id))
+        if isinstance(data, dict):
+            raw = data.get("reportedValue")
+            if raw is not None:
+                # pH and ORP are typically reported as raw × 0.01 or × 0.1 — return raw for now
+                # and let the user see the actual value; can be adjusted once live data is captured
+                return raw
+        return None
