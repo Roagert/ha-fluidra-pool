@@ -147,8 +147,9 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
                     attempts += 1
                     continue
 
-                headers = {"Authorization": f"Bearer {token}"}
-                async with self.session.ws_connect(WS_URL, headers=headers, heartbeat=30) as ws:
+                # Auth via query param (confirmed 2026-03-30 live capture)
+                ws_url = f"{WS_URL}?token={token}"
+                async with self.session.ws_connect(ws_url, heartbeat=30) as ws:
                     _LOGGER.info("WebSocket connected to %s", WS_URL)
                     attempts = 0  # reset on successful connect
 
