@@ -17,7 +17,8 @@ GHIDRA_HOME = "/opt/ghidra/ghidra_12.0.4_PUBLIC"
 
 print(f"[*] Opening {BINARY} in Ghidra...")
 
-with pyghidra.open_program(BINARY, ghidra_install_dir=GHIDRA_HOME, analyze=True) as flat_api:
+pyghidra.start(install_dir=GHIDRA_HOME)
+with pyghidra.open_program(BINARY, project_location="/tmp/ghidra_fluidra", project_name="FluidraProject", analyze=True) as flat_api:
     from ghidra.program.model.data import StringDataType, StringUTF8DataType, UnicodeDataType
 
     program = flat_api.getCurrentProgram()
