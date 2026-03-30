@@ -14,9 +14,9 @@
 ## P1 — Core
 
 - [x] [TASK-001](TASK-001.md) — WebSocket real-time updates *(done 2026-03-29)*
-- [ ] [TASK-002](TASK-002.md) — Local UDP client (iQBridge RS)
-- [ ] [TASK-003](TASK-003.md) — Dual-mode coordinator (local → WS → REST)
-- [ ] [TASK-004](TASK-004.md) — Ghidra headless analysis of libapp.so
+- [ ] [TASK-002](TASK-002.md) — Local UDP client (iQBridge RS) ⚠️ BLOCKED: auth token expired, needs new `fluidra_debug.py` run
+- [ ] [TASK-003](TASK-003.md) — Dual-mode coordinator (local → WS → REST) *(depends TASK-002)*
+- [x] [TASK-004](TASK-004.md) — Ghidra + strings analysis of libapp.so *(done 2026-03-30)*
 
 ---
 
@@ -34,12 +34,13 @@
 ## P3 — Nice-to-Have
 
 - [ ] [TASK-011](TASK-011.md) — FEAT-003: MQTT bridge
-- [ ] [TASK-012](TASK-012.md) — FW-001: iQBridge firmware OTA URL extraction
-- [ ] [TASK-013](TASK-013.md) — FW-002: Firmware binary analysis
-- [ ] [TASK-014](TASK-014.md) — FW-003: Custom firmware design doc
+- [x] [TASK-012](TASK-012.md) — FW-001: Nodon firmware bundled in APK (no separate URL) *(done 2026-03-30)*
+- [x] [TASK-013](TASK-013.md) — FW-002: Firmware binary analysis → see docs/FIRMWARE.md *(done 2026-03-30)*
+- [ ] [TASK-014](TASK-014.md) — FW-003: Custom firmware design (EFR32 Gecko SDK)
 
 ---
 
 ## Dynamically Generated
 
-*(None yet — populated by Ralph loop output)*
+- [ ] [TASK-DYN-001](TASK-DYN-001.md) — Recover Fluidra credentials + re-run fluidra_debug.py *(TASK-002 blocker)*
+- [ ] [TASK-DYN-002](TASK-DYN-002.md) — STM32 serial protocol RE (needed for custom EFR32 firmware)
