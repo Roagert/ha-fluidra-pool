@@ -394,12 +394,13 @@ class FluidraErrorSensor(FluidraBaseEntity, SensorEntity):
     
     @property
     def native_value(self) -> str:
-        """Return the error code as the main value."""
+        """Return error code with human-readable description as the main value."""
         if self.coordinator.error_information:
             error_code = self.coordinator.error_information.get('error_code')
             if error_code:
-                return str(error_code)
-            # If no error code but there's an error message, show "Error"
+                from .const import ERROR_CODES
+                description = ERROR_CODES.get(str(error_code), "Unknown error")
+                return f"{error_code} — {description}"
             if self.coordinator.error_information.get('error_message'):
                 return "Error"
         return "No Error"
