@@ -82,10 +82,27 @@ support local LAN control (iQBridge RS with local mode enabled). Fields observed
 - `localUdp` — the local UDP configuration object
 - Contains: host/IP, port, and authentication token (serial-based key)
 
-**Likely port**: the iQBridge RS exposes a UDP socket on the LAN.
-**Discovery**: mDNS (`_tcp.local`) or device IP from cloud API response.
+**Likely port**: **9003** (best guess from binary strings; candidates: 8902, 9090, 9298, 5781)
+**Discovery**: cloud API `commandAndControl.localUdp` field in device response.
 
-> Full protocol format requires live traffic capture (Frida) or iQBridge firmware dump.
+### Packet Format (Hypothesis — from Cipher RE session 2026-03-29)
+
+```
+[0x12 0x34] [Protocol:1] [CommandID:2 BE] [PayloadLen:4 BE] [Payload:N] [CRC32:4] [HMAC-SHA256:32]
+```
+
+Key functions in binary: `initUdpDeviceListener`, `sendUDPCommand`, `udpKey`, `updateUPDkey`,
+`FluidraMessageProtocol`, `MagicNumber`, `payloadIntBE`, `payloadIntLE`, `getCrc32Byte`, `hmac256`
+
+### Auth Token Derivation (Hypothesis)
+
+```python
+import hmac, hashlib
+token = hmac.new(b"fluidra", serial.encode(), hashlib.sha256).hexdigest()
+```
+
+> See `PROTOCOL_FINDINGS.md` for full Cipher analysis, extended component map, security findings,
+> and verification steps.
 
 ---
 
