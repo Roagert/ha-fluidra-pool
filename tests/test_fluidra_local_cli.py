@@ -52,16 +52,25 @@ def test_decode_heatpump_status_converts_known_components():
         14: {"reportedValue": 2},
         15: {"reportedValue": 290, "desiredValue": 290},
         19: {"reportedValue": 131},
-        62: {"reportedValue": 87},
+        28: {"reportedValue": 0},
+        67: {"reportedValue": 87},
+        68: {"reportedValue": 131},
+        69: {"reportedValue": 132},
+        74: {"reportedValue": 224},
+        81: {"reportedValue": 7},
+        82: {"reportedValue": 40},
     }
 
     status = cli.decode_heatpump_status(components)
 
     assert status["power"] == "ON"
-    assert status["mode"] == "SmartAuto"
+    assert status["mode"] == "SmartHeatingCooling"
     assert status["set_temperature_c"] == 29.0
     assert status["water_temperature_c"] == 13.1
-    assert status["ambient_temperature_c"] == 8.7
+    assert status["air_temperature_c"] == 8.7
+    assert status["water_inlet_temperature_c"] == 13.1
+    assert status["water_outlet_temperature_c"] == 13.2
+    assert status["flow_status"] == "ok"
     assert status["running"] is True
 
 
@@ -70,6 +79,6 @@ def test_safe_write_validation_allows_only_confirmed_controls():
 
     assert cli.validate_write(13, 1) == []
     assert cli.validate_write(14, 6) == []
-    assert cli.validate_write(15, 420) == []
-    assert cli.validate_write(15, 149)
+    assert cli.validate_write(15, 400) == []
+    assert cli.validate_write(15, 69)
     assert cli.validate_write(62, 120)
