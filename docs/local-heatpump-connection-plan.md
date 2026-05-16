@@ -1,109 +1,65 @@
-# Local heatpump connection plan — 5-agent synthesis
+# Fluidra heat pump connection plan — corrected synthesis
 
 Date: 2026-05-15
-Device: Fluidra/Amitime `amt` heat pump, `LG24440781`, firmware `2.5.0`, LAN IP `192.168.1.11`
+Device: Fluidra/Amitime `amt` heat pump, `LG24440781`, firmware `2.5.0`
+
+## Critical correction
+
+`192.168.1.11` is **not** the Fluidra heat pump. A packet capture showed that host is Home Assistant/Mosquitto (`homeassistant.local`, Home Assistant websocket on `8123`, Matter/HAP/Music Assistant, MQTT `1883`).
+
+The actual Fluidra device is tracked by Home Assistant as:
+
+- Entity: `device_tracker.fluidra`
+- IP on 2026-05-15: `192.168.1.29`
+- MAC on 2026-05-15: `ac:15:18:98:15:f0`
+
+Do not pursue MQTT for this heat pump. The earlier MQTT path was Home Assistant broker noise.
 
 ## Executive conclusion
 
-Five independent approaches were tested/investigated. The most promising local path is **authenticated MQTT on `192.168.1.11:1883`**.
+The confirmed control path for this heat pump is **Fluidra cloud REST** with AWS Cognito access tokens and component `desiredValue` writes.
 
-The previous local-UDP hypothesis is now low confidence for this specific `amt` heat pump. UDP appears real in the Fluidra app, but likely applies to iQBridge/Lumiplus/local-UDP capable devices, not necessarily this Amitime heat pump.
+Local UDP and BLE remain research tracks:
 
-BLE is promising but currently looks provisioning-first. It may support command/control through the app's generic BLE stack, but it is not yet proven for this device in normal operation.
+- UDP: generic Fluidra app support exists (`MobileCommandAndControlLocalUdp`, `sendUDPCommand`, `udpKey`, HMAC/CRC helpers), but current `amt` API snapshots do **not** expose `commandAndControl.localUdp` for LG24440781.
+- BLE: SPP provisioning is confirmed by device capabilities, but runtime BLE control is not proven for this `amt` device.
+- MQTT: omit entirely for Fluidra control.
 
-## Approach results
+## Confirmed cloud API
 
-### 1. LAN service discovery
+Base:
 
-Report: `docs/subagent-lan-discovery.md`
+```text
+https://api.fluidra-emea.com
+```
 
-Findings:
+Auth:
 
-- `192.168.1.11` is reachable from this host on the LAN.
-- Route/source: `wlp9s0`, source IP `192.168.1.62`.
-- Exactly one tested TCP service was open:
-  - `tcp/1883` — MQTT broker.
-- HTTP/HTTPS/common web ports were closed/refused.
-- Prior Fluidra/iQBridge UDP candidate ports did not return useful readable data.
-- Anonymous MQTT is refused:
-  - MQTT 3.1.1 return code `5`, not authorized.
-  - MQTT 5 reason code `0x87`, not authorized.
+```text
+Authorization: Bearer <Cognito AccessToken>
+```
 
-Implication:
+Observed token TTL: approximately 300 seconds.
 
-- Build around MQTT discovery next, not HTTP.
+Confirmed endpoints:
 
-### 2. Static UDP protocol reverse engineering
+```text
+GET /generic/devices/LG24440781?deviceType=connected
+GET /generic/devices/LG24440781/components?deviceType=connected
+GET /generic/devices/LG24440781/uiconfig?appId=iaq&deviceType=connected
+PUT /generic/devices/LG24440781/components/{componentId}?deviceType=connected
+```
 
-Report: `docs/subagent-udp-protocol.md`
+PUT body:
 
-Findings:
+```json
+{ "desiredValue": 0 }
+```
 
-- App strings strongly confirm a UDP stack exists:
-  - `MobileCommandAndControlLocalUdp`
-  - `sendUDPCommand`
-  - `initUdpDeviceListener`
-  - `FluidraMessageProtocol`
-  - `MagicNumber`
-  - `payloadIntBE`, `payloadIntLE`, `payloadString`
-  - `hmac256`, `getCrc32Byte`
-  - `udpKey`, `updateUPDkey`
-- But for this known `amt` heat pump, prior cloud/device evidence did not expose `commandAndControl.localUdp`.
-- Current `local_client.py` packet layout is a hypothesis and should not be trusted for writes.
+Confirmed important components:
 
-Implication:
-
-- Keep UDP as a decoder/probe research track only.
-- Do not ship direct UDP writes until packet capture or exact protocol evidence exists.
-
-### 3. BLE SPP/provisioning investigation
-
-Report: `docs/subagent-ble-local.md`
-
-Findings:
-
-- Bluetooth tools and adapter are available.
-- Passive BLE scan worked, but no advertisement obviously matched Fluidra/Amitime/known UUID/device serial.
-- App/device evidence confirms BLE provisioning capabilities:
-  - Service UUID: `4e7763c4-211b-47b8-88df-cd869df32c48`
-  - RX UUID: `54c4dfef-4e04-4c42-9c33-06a6af86280c`
-  - TX UUID: `760f6551-4156-4829-8bcc-62591b1eb948`
-  - Protocol: SPP; variants `SPP8`, `SPP32`, `SPP8X`.
-- Access-code/pairing gating is strongly indicated.
-
-Implication:
-
-- BLE is worth a second pass with `bleak` and the heat pump in provisioning/add-device mode.
-- Treat BLE as unproven for local runtime datapoints/control until service enumeration and read-only handshake are confirmed.
-
-### 4. Authenticated local MQTT investigation
-
-Report: `docs/subagent-local-mqtt.md`
-
-Findings:
-
-- `tcp/1883` is confirmed MQTT and requires auth.
-- Safe CONNECT variants using public identifiers only were refused:
-  - anonymous client ID
-  - device serial as client ID
-  - WiFi module serial as client ID
-  - serial/module serial as username with blank/placeholder password
-- App strings did not reveal topic templates or credentials.
-- Best next source for MQTT credentials/topics is the redacted full device detail/uiconfig/command-and-control cloud objects, or passive official-app/device traffic capture.
-
-Implication:
-
-- Local MQTT is the lead candidate.
-- Need credentials and topic schema before a real CLI can subscribe/read.
-
-### 5. Datapoint and CLI surface design
-
-Report: `docs/subagent-cli-datapoints.md`
-
-Confirmed useful datapoints:
-
-- `13` — power, `0=OFF`, `1=ON`.
-- `14` — mode:
+- `13` — power, `0=OFF`, `1=ON`
+- `14` — mode
   - `0` SmartHeat
   - `1` SmartCool
   - `2` SmartAuto
@@ -111,74 +67,129 @@ Confirmed useful datapoints:
   - `4` SilenceHeat
   - `5` BoostCool
   - `6` SilenceCool
-- `15` — set temperature, raw `x0.1 °C`.
-- `19` — water temperature, raw `x0.1 °C`.
-- `62` — ambient/outdoor temperature, raw `x0.1 °C`.
-- `65..70` — additional temperature sensors, raw `x0.1 °C`.
-- `0..10` — identity/system fields.
-- `11` — running/active state.
+- `15` — set temperature, raw `x0.1 °C`
+- `19` — water temperature, raw `x0.1 °C`
+- `0..10` — identity/system fields
+- `11` — running/active state
 
-Flow:
+## Approach results
 
-- No confirmed numeric flow-rate component was found.
-- Model flow as status/alarm for now, likely from `E001` / `E016` no-flow style errors and app no-flow UI hints.
+### 1. LAN service discovery
 
-CLI direction:
+Corrected findings:
 
-- Use one transport-independent data model with adapters for cloud, MQTT, BLE, and UDP.
-- Default to read-only/dry-run.
-- Only allow writes to confirmed components `13`, `14`, and `15` after explicit `--allow-write`/confirmation.
+- `192.168.1.29` is the Fluidra heat pump IP from Home Assistant tracker.
+- Read-only probe: ping reachable.
+- Common candidate TCP ports were closed, including `1883`.
+- `192.168.1.11:1883` is Home Assistant/Mosquitto, not Fluidra.
+
+Implication:
+
+- Do not build a Fluidra MQTT path.
+- Use LAN probing only to support UDP/BLE research and always confirm the current IP from Home Assistant first.
+
+### 2. Static UDP protocol reverse engineering
+
+Report: `/home/roagert/projects/fluidra-re/LOCAL_UDP_FINDINGS.md`
+
+Findings:
+
+- App strings strongly confirm a generic UDP stack exists:
+  - `MobileCommandAndControlLocalUdp`
+  - `sendUDPCommand`
+  - `udpService`
+  - `udpKey`
+  - `updateUPDkey`
+  - `generateWorkingKey`
+  - `FluidraMessageProtocol`
+  - `MagicNumber`
+  - `payloadIntBE`, `payloadIntLE`
+  - `hmac256`, `getCrc32Byte`
+- Ghidra headless/raw string search found offsets/addresses, but plain Ghidra did not recover useful Dart AOT xrefs.
+- Exact packet layout and key derivation remain unknown.
+- Current `amt` snapshots do not prove UDP is enabled for LG24440781.
+
+Implication:
+
+- Keep UDP as research only.
+- Next evidence layer should be router/AP capture or Dart AOT-aware recovery, not guessed packets.
+
+### 3. BLE SPP/provisioning investigation
+
+Confirmed from device API:
+
+- BLE protocol: `SPP`
+- Pairing mode: `auto`
+- Service UUID: `4e7763c4-211b-47b8-88df-cd869df32c48`
+- RX UUID: `54c4dfef-4e04-4c42-9c33-06a6af86280c`
+- TX UUID: `760f6551-4156-4829-8bcc-62591b1eb948`
+
+Static app evidence also shows generic runtime BLE command/control classes, SPP framing variants, CRC, and access-code machinery. Current `amt` snapshots expose BLE under provisioning capabilities only; runtime BLE control is not proven.
+
+Implication:
+
+- Safe BLE tool work: parse provisioning block, passive advertisement scan, optional read-only GATT service discovery only with explicit user approval.
+- No BLE writes until protocol and state impact are known.
+
+### 4. Cloud REST tool direction
+
+Report: `/home/roagert/projects/fluidra-re/REST_CONTROL_SURFACE.md`
+
+Recommended `fluidra-re` CLI shape:
+
+```bash
+fluidra-re auth login --username "$FLUIDRA_USERNAME" --password "$FLUIDRA_PASSWORD" --json
+fluidra-re cloud device --device-id LG24440781 --device-type connected --json
+fluidra-re cloud components --device-id LG24440781 --device-type connected --json
+fluidra-re cloud uiconfig --device-id LG24440781 --app-id iaq --device-type connected --json
+fluidra-re cloud component --device-id LG24440781 --component-id 13 --device-type connected --json
+fluidra-re cloud set-power --device-id LG24440781 --off --device-type connected --confirm --json
+fluidra-re cloud set-temperature --device-id LG24440781 --celsius 26.0 --device-type connected --confirm --json
+```
+
+Safety options:
+
+- `--dry-run` by default for writes during development
+- `--confirm` / `--yes` for writes
+- `--poll-after-put`
+- `--redact` by default
+- never print tokens or private raw payloads unless explicitly requested and redacted
 
 ## Recommended implementation sequence
 
-1. **Create `fluidra-local discover`**
-   - Ping/ARP target.
-   - TCP scan known ports.
-   - MQTT CONNACK probe.
-   - BLE passive scan if adapter exists.
-   - No writes.
+1. Implement `fluidra-re cloud` first:
+   - Cognito login/token cache with expiry margin
+   - device/components/uiconfig GETs
+   - guarded `desiredValue` PUTs for components `13`, `14`, `15`
+   - status rendering from component map
 
-2. **Create `fluidra-local cloud-dump --redact`**
-   - Fetch device detail, components, uiconfig, command-and-control shape.
-   - Redact tokens/passwords/IDs where needed.
-   - Preserve field names and transport sections.
-   - Goal: find local MQTT credentials/topics or confirm they are absent.
+2. Add `fluidra-re analyze-apk`:
+   - scan `libapp.so` for UDP/BLE high-signal strings
+   - emit offsets and confidence levels
+   - optionally run the Ghidra raw string script
 
-3. **Create `fluidra-local mqtt probe`**
-   - Accept user-supplied credentials or extracted local credentials.
-   - Connect to `192.168.1.11:1883`.
-   - Subscribe read-only to a narrow candidate set once topics are known.
-   - Never publish by default.
+3. Add `fluidra-re ble inspect-snapshot`:
+   - parse device/uiconfig snapshots for provisioning vs runtime BLE config
+   - classify `ble_role` without touching the device
 
-4. **Create `fluidra-local status`**
-   - Read using the best available transport.
-   - Print power, mode, setpoint, water temp, ambient temp, active state, alarms, and flow/no-flow status.
+4. Add `fluidra-re capture-plan`:
+   - print router/AP tcpdump filters for the current Fluidra IP
+   - explicitly target UDP/BLE research only
+   - no MQTT suggestions
 
-5. **Create guarded write commands**
-   - `heat on/off`
-   - `heat mode <smart-heat|smart-cool|smart-auto|boost-heat|silence-heat|boost-cool|silence-cool>`
-   - `heat set-temp <15.0..42.0>`
-   - Require explicit write flag and confirmation.
+5. Only after packet/code proof: consider experimental local UDP/BLE adapters.
 
 ## Open blockers
 
-- We do not yet have local MQTT credentials or topic schema.
-- The committed debug JSON does not contain the expected full 83-component dump; `PROTOCOL_FINDINGS.md` remains the authoritative map for now.
-- UDP packet format is not confirmed.
-- BLE runtime control is not confirmed.
-- Flow measurement is not confirmed as a numeric datapoint.
-
-## Files produced by the five subagents
-
-- `docs/subagent-lan-discovery.md`
-- `docs/subagent-udp-protocol.md`
-- `docs/subagent-ble-local.md`
-- `docs/subagent-local-mqtt.md`
-- `docs/subagent-cli-datapoints.md`
+- No confirmed local UDP packet format or `udpKey` for LG24440781.
+- No proof that BLE runtime control is enabled for this `amt` device.
+- No numeric flow-rate component confirmed.
+- Access-token refresh needs robust implementation for unattended CLI use.
 
 ## Safety policy for next work
 
 - Read-only probes are allowed.
-- No MQTT publishes, UDP command packets, BLE writes, or heat-pump setting changes without explicit approval.
-- Do not log or print credentials/tokens/raw authenticated packets.
-- Writes must be dry-run by default and restricted to known safe components/ranges.
+- No UDP command packets, BLE writes, or heat-pump setting changes without explicit approval.
+- Cloud PUTs must be dry-run or explicitly confirmed.
+- Do not log or print credentials, bearer tokens, `udpKey`, raw authenticated packets, or unredacted private payloads.
+- MQTT is not a Fluidra path here and should not appear in future command suggestions.

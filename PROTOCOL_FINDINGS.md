@@ -13,11 +13,11 @@
 | Thing type | `connected` |
 | SKU | `1441` |
 | Firmware | `2.5.0` |
-| LAN IP | `192.168.1.11` |
+| LAN IP | `192.168.1.29` from Home Assistant `device_tracker.fluidra` on 2026-05-15 |
 | WiFi module SN | `BXWAB0603494724050` |
-| WiFi RSSI | `-82 dBm` |
 | Pool ID | `6cfd9bc9-09e8-547d-9f5a-0274c170a915` |
-| User | `thomasroager@gmail.com` (Thomas Roager, DK) |
+
+> Correction 2026-05-15: earlier notes listed `192.168.1.11` as the Fluidra IP and treated `tcp/1883` as a Fluidra local MQTT service. A packet capture showed `192.168.1.11` is Home Assistant/Mosquitto (`homeassistant.local`, HA websocket on `8123`, Matter/HAP/Music Assistant). Do not use MQTT/1883 for Fluidra control.
 
 ---
 
@@ -187,32 +187,33 @@ wss://ws.fluidra-emea.com?token=<access_token>
 
 | Property | iQBridge RS | This device (amt) |
 |----------|-------------|-------------------|
-| Cloud | MQTT via iQBridge | Direct MQTT (AWS IoT) |
-| Local UDP | YES — `commandAndControl.localUdp` | NOT PRESENT |
-| BLE | NO | YES — SPP provisioning |
-| `commandAndControl` | Has `localUdp` field | Not found in API |
+| App/client control | May have extra local transports | Cognito + Fluidra cloud REST `desiredValue` writes |
+| Local UDP | YES when `commandAndControl.localUdp` is present | NOT PRESENT in current API snapshots |
+| BLE | Device-family dependent | SPP provisioning confirmed; runtime control not proven |
+| MQTT | Not part of app/client path | NOT USED for this app/device control path |
 
 ### Communication Architecture (amt device)
 
 ```
 Heat pump (LG24440781)
         │
-        │ WiFi → MQTT → AWS IoT
+        │ WiFi → Fluidra cloud backend
         ▼
 Fluidra Cloud (api.fluidra-emea.com)
         │
         ├── REST API (GET/PUT components)
-        └── WebSocket (wss://ws.fluidra-emea.com?token=...)
+        └── WebSocket (wss://ws.fluidra-emea.com?token=***)
                 │
-                └── HA Integration (coordinator.py)
+                └── HA Integration / fluidra-re cloud CLI
 ```
 
-### Local Control Options (confirmed / hypothetical)
+### Local / non-cloud options (confirmed / hypothetical)
 1. **REST PUT** (confirmed) — via cloud API, commands stored even when device offline
 2. **WebSocket subscribe** (confirmed) — near-real-time push when device online
-3. **Local HTTP** (hypothesis) — port scan of 192.168.1.11 needed from LAN
-4. **Local UDP** (hypothesis) — binary strings confirm port 9003 in app; amt may have it
-5. **BLE SPP** (confirmed in binary) — serviceUuid `4e7763c4-...`, rxUuid/txUuid confirmed
+3. **BLE SPP provisioning** (confirmed in device API response) — serviceUuid `4e7763c4-...`, rxUuid/txUuid confirmed; runtime control not proven
+4. **Local UDP** (generic app capability, not confirmed for this `amt`) — app strings show `MobileCommandAndControlLocalUdp`, `udpKey`, `sendUDPCommand`, HMAC/CRC helpers, but current API snapshots do not expose `commandAndControl.localUdp`
+
+**MQTT:** do not use. The only observed local MQTT broker is Home Assistant/Mosquitto at `192.168.1.11:1883`, not the Fluidra device.
 
 ---
 
@@ -233,21 +234,15 @@ SPP variants in binary: `SPP8`, `SPP32`, `SPP8X` — multi-packet framing protoc
 
 ## Local Protocol Discovery — Needed
 
-The device has LAN IP `192.168.1.11`. Port scan from LAN needed to determine if there's a local HTTP/WebSocket/UDP API.
+The actual Fluidra device is currently tracked by Home Assistant as `device_tracker.fluidra` (`192.168.1.29` on 2026-05-15). Read-only probing found it reachable by ping but common TCP ports, including `1883`, closed. Do not scan or target `192.168.1.11` for Fluidra; that host is Home Assistant/Mosquitto.
 
-### Recommended scan (run from home LAN)
+### Recommended read-only checks
 ```bash
-# From a machine on 192.168.1.x network:
-nmap -sT -sU -p 80,443,8080,8443,502,9003,8902,5781,5750,1800,1801 192.168.1.11
-# Or quick:
-nmap -F 192.168.1.11
-```
+# Confirm current IP from Home Assistant before probing.
+python3 scripts/fluidra_local.py --host 192.168.1.29 discover
 
-### If port 80/8080 responds:
-```bash
-curl http://192.168.1.11/
-curl http://192.168.1.11/api/
-curl http://192.168.1.11/status
+# If researching UDP, use passive/router/AP capture first; do not send crafted control packets.
+sudo tcpdump -i any -nn -s0 -w fluidra_udp.pcap 'host 192.168.1.29 and udp'
 ```
 
 ---

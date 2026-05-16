@@ -25,18 +25,18 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
-DEFAULT_HOST = "192.168.1.11"
+DEFAULT_HOST = "192.168.1.29"
 DEFAULT_MQTT_PORT = 1883
 DEFAULT_TIMEOUT = 1.5
 
 MODE_NAMES = {
-    0: "SmartHeat",
-    1: "SmartCool",
-    2: "SmartAuto",
-    3: "BoostHeat",
-    4: "SilenceHeat",
-    5: "BoostCool",
-    6: "SilenceCool",
+    0: "SmartHeating",
+    1: "SmartCooling",
+    2: "SmartHeatingCooling",
+    3: "BoostHeating",
+    4: "SilenceHeating",
+    5: "BoostCooling",
+    6: "SilenceCooling",
 }
 
 POWER_COMPONENT = 13
@@ -44,14 +44,21 @@ MODE_COMPONENT = 14
 SETPOINT_COMPONENT = 15
 RUNNING_COMPONENT = 11
 WATER_TEMP_COMPONENT = 19
-AMBIENT_TEMP_COMPONENT = 62
-EXTRA_TEMP_COMPONENTS = tuple(range(65, 71))
+AIR_TEMP_COMPONENT = 67
+WATER_INLET_COMPONENT = 68
+WATER_OUTLET_COMPONENT = 69
+SUPPLY_VOLTAGE_COMPONENT = 74
+STATUS_COMPONENT = 17
+NO_FLOW_COMPONENT = 28
+MIN_SETPOINT_COMPONENT = 81
+MAX_SETPOINT_COMPONENT = 82
+EXTRA_TEMP_COMPONENTS = (65, 66, 70)
 FLOW_ERROR_CODES = {"E001", "E016"}
 
 SAFE_WRITE_RANGES = {
     POWER_COMPONENT: (0, 1),
     MODE_COMPONENT: (0, 6),
-    SETPOINT_COMPONENT: (150, 420),  # 15.0-42.0 °C raw x0.1
+    SETPOINT_COMPONENT: (70, 400),  # 7.0-40.0 °C raw x0.1 from uiconfig c81/c82
 }
 
 MQTT_311_RETURN_CODES = {
@@ -265,10 +272,17 @@ def decode_heatpump_status(components: Mapping[Any, Any]) -> dict[str, Any]:
         "running_raw": running_raw,
         "set_temperature_c": _raw_to_celsius(_get_component(components, SETPOINT_COMPONENT)),
         "water_temperature_c": _raw_to_celsius(_get_component(components, WATER_TEMP_COMPONENT)),
-        "ambient_temperature_c": _raw_to_celsius(_get_component(components, AMBIENT_TEMP_COMPONENT)),
+        "air_temperature_c": _raw_to_celsius(_get_component(components, AIR_TEMP_COMPONENT)),
+        "water_inlet_temperature_c": _raw_to_celsius(_get_component(components, WATER_INLET_COMPONENT)),
+        "water_outlet_temperature_c": _raw_to_celsius(_get_component(components, WATER_OUTLET_COMPONENT)),
+        "supply_voltage_v": _get_component(components, SUPPLY_VOLTAGE_COMPONENT),
+        "status_raw": _get_component(components, STATUS_COMPONENT),
+        "no_flow": _get_component(components, NO_FLOW_COMPONENT) == 1,
+        "min_setpoint_c": _get_component(components, MIN_SETPOINT_COMPONENT),
+        "max_setpoint_c": _get_component(components, MAX_SETPOINT_COMPONENT),
         "extra_temperatures_c": {},
         "flow_status": "unknown",
-        "flow_note": "No numeric flow-rate datapoint is confirmed yet; infer no-flow from E001/E016 alarms.",
+        "flow_note": "Confirmed no-flow datapoint is component 28: 1 means No Flow, 0 means OK.",
     }
 
     for cid in EXTRA_TEMP_COMPONENTS:
@@ -278,10 +292,14 @@ def decode_heatpump_status(components: Mapping[Any, Any]) -> dict[str, Any]:
 
     errors = extract_error_codes(components)
     status["errors"] = sorted(errors)
-    if errors & FLOW_ERROR_CODES:
+    if _get_component(components, NO_FLOW_COMPONENT) == 1:
+        status["flow_status"] = "no-flow-alarm"
+    elif errors & FLOW_ERROR_CODES:
         status["flow_status"] = "no-flow-alarm"
     elif errors:
         status["flow_status"] = "no-flow-not-detected"
+    else:
+        status["flow_status"] = "ok"
     return status
 
 
