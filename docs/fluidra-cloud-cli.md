@@ -19,13 +19,21 @@ export FLUIDRA_USERNAME='you@example.com'
 export FLUIDRA_PASSWORD='***'
 ```
 
-The CLI caches the Cognito access token at:
+The CLI caches the Cognito access/refresh tokens at:
 
 ```text
 ~/.cache/fluidra-cloud/token.json
 ```
 
-Use `--no-cache` to force a fresh login or `--access-token` to use a captured token directly.
+Login once to seed the cache:
+
+```bash
+python3 scripts/fluidra_cloud.py --username "$FLUIDRA_USERNAME" --password "$FLUIDRA_PASSWORD" login
+```
+
+After that, normal commands can run without username/password. When the short-lived access token expires, the CLI uses the cached `refresh_token` to obtain a new access token and rewrites the cache.
+
+Use `--no-cache` to force no cache reads/writes or `--access-token` to use a captured token directly.
 
 ## Read commands
 

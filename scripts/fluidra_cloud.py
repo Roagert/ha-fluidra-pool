@@ -284,22 +284,25 @@ class FluidraCloudClient:
             "ClientId": COGNITO_CLIENT_ID,
             "AuthParameters": {"USERNAME": username, "PASSWORD": password},
         }
-        headers = {
-            "Content-Type": "application/x-amz-json-1.1",
-            "X-Amz-Target": "AWSCognitoIdentityProviderService.InitiateAuth",
-            "User-Agent": DEFAULT_USER_AGENT,
-        }
-        data = _http_json("POST", COGNITO_ENDPOINT, headers=headers, payload=payload, timeout=timeout)
+        data = _cognito_auth(payload, timeout=timeout)
         try:
-            auth = data["AuthenticationResult"]
-            tokens = AuthTokens(
-                access_token=auth["AccessToken"],
-                id_token=auth.get("IdToken"),
-                refresh_token=auth.get("RefreshToken"),
-                expires_at=int(time.time()) + int(auth.get("ExpiresIn", 3600)),
-            )
+            tokens = _tokens_from_auth_result(data["AuthenticationResult"])
         except (KeyError, TypeError) as err:
             raise FluidraCloudError(f"unexpected Cognito response shape: {data!r}") from err
+        return cls(tokens.access_token, timeout=timeout), tokens
+
+    @classmethod
+    def refresh(cls, refresh_token: str, *, timeout: float = 20.0) -> tuple["FluidraCloudClient", AuthTokens]:
+        payload = {
+            "AuthFlow": "REFRESH_TOKEN_AUTH",
+            "ClientId": COGNITO_CLIENT_ID,
+            "AuthParameters": {"REFRESH_TOKEN": refresh_token},
+        }
+        data = _cognito_auth(payload, timeout=timeout)
+        try:
+            tokens = _tokens_from_auth_result(data["AuthenticationResult"], fallback_refresh_token=refresh_token)
+        except (KeyError, TypeError) as err:
+            raise FluidraCloudError(f"unexpected Cognito refresh response shape: {data!r}") from err
         return cls(tokens.access_token, timeout=timeout), tokens
 
     def request(self, method: str, path_or_url: str, payload: Any = None) -> Any:
@@ -332,6 +335,24 @@ class FluidraCloudClient:
         )
 
 
+def _tokens_from_auth_result(auth: Mapping[str, Any], *, fallback_refresh_token: str | None = None) -> AuthTokens:
+    return AuthTokens(
+        access_token=auth["AccessToken"],
+        id_token=auth.get("IdToken"),
+        refresh_token=auth.get("RefreshToken") or fallback_refresh_token,
+        expires_at=int(time.time()) + int(auth.get("ExpiresIn", 3600)),
+    )
+
+
+def _cognito_auth(payload: Mapping[str, Any], *, timeout: float = 20.0) -> Any:
+    headers = {
+        "Content-Type": "application/x-amz-json-1.1",
+        "X-Amz-Target": "AWSCognitoIdentityProviderService.InitiateAuth",
+        "User-Agent": DEFAULT_USER_AGENT,
+    }
+    return _http_json("POST", COGNITO_ENDPOINT, headers=headers, payload=payload, timeout=timeout)
+
+
 def _http_json(method: str, url: str, *, headers: Mapping[str, str], payload: Any = None, timeout: float = 20.0) -> Any:
     body = None if payload is None else json.dumps(payload).encode("utf-8")
     request = urllib.request.Request(url, data=body, method=method.upper(), headers=dict(headers))
@@ -356,6 +377,12 @@ def token_cache_path(path: str | None) -> Path:
     return Path(os.environ.get("FLUIDRA_TOKEN_CACHE", "~/.cache/fluidra-cloud/token.json")).expanduser()
 
 
+def save_tokens(cache: Path, tokens: AuthTokens) -> None:
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    cache.write_text(json.dumps(tokens.to_json(), indent=2))
+    cache.chmod(0o600)
+
+
 def get_client(args: argparse.Namespace) -> FluidraCloudClient:
     if args.access_token:
         return FluidraCloudClient(args.access_token, timeout=args.timeout)
@@ -366,20 +393,46 @@ def get_client(args: argparse.Namespace) -> FluidraCloudClient:
             tokens = AuthTokens.from_json(json.loads(cache.read_text()))
             if not tokens.expires_at or tokens.expires_at > int(time.time()) + 60:
                 return FluidraCloudClient(tokens.access_token, timeout=args.timeout)
-        except (OSError, ValueError, json.JSONDecodeError):
+            if tokens.refresh_token:
+                client, refreshed = FluidraCloudClient.refresh(tokens.refresh_token, timeout=args.timeout)
+                save_tokens(cache, refreshed)
+                return client
+        except (OSError, ValueError, json.JSONDecodeError, FluidraCloudError):
             pass
 
     username = args.username or os.environ.get("FLUIDRA_USERNAME")
     password = args.password or os.environ.get("FLUIDRA_PASSWORD")
     if not username or not password:
-        raise FluidraCloudError("provide --username/--password, FLUIDRA_USERNAME/FLUIDRA_PASSWORD, or --access-token")
+        raise FluidraCloudError("provide --username/--password, FLUIDRA_USERNAME/FLUIDRA_PASSWORD, --access-token, or a cache with refresh_token")
 
     client, tokens = FluidraCloudClient.login(username, password, timeout=args.timeout)
     if not args.no_cache:
-        cache.parent.mkdir(parents=True, exist_ok=True)
-        cache.write_text(json.dumps(tokens.to_json(), indent=2))
-        cache.chmod(0o600)
+        save_tokens(cache, tokens)
     return client
+
+
+def command_login(args: argparse.Namespace) -> int:
+    if args.access_token:
+        tokens = AuthTokens(access_token=args.access_token)
+    else:
+        username = args.username or os.environ.get("FLUIDRA_USERNAME")
+        password = args.password or os.environ.get("FLUIDRA_PASSWORD")
+        if not username or not password:
+            raise FluidraCloudError("login requires --username/--password or FLUIDRA_USERNAME/FLUIDRA_PASSWORD")
+        _, tokens = FluidraCloudClient.login(username, password, timeout=args.timeout)
+    cache = token_cache_path(args.token_cache)
+    if args.no_cache:
+        print_json({"ok": True, "cached": False, "expires_at": tokens.expires_at, "has_refresh_token": bool(tokens.refresh_token)})
+        return 0
+    save_tokens(cache, tokens)
+    print_json({
+        "ok": True,
+        "cached": True,
+        "token_cache": str(cache),
+        "expires_at": tokens.expires_at,
+        "has_refresh_token": bool(tokens.refresh_token),
+    })
+    return 0
 
 
 def command_devices(args: argparse.Namespace) -> int:
@@ -469,6 +522,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--device-id", default=DEFAULT_DEVICE_ID, help=f"Default device id (default: {DEFAULT_DEVICE_ID})")
     add_auth_args(parser)
     sub = parser.add_subparsers(dest="command", required=True)
+
+    login = sub.add_parser("login", help="Authenticate once and save token cache for later commands")
+    login.set_defaults(func=command_login)
 
     devices = sub.add_parser("devices", help="List cloud devices")
     devices.set_defaults(func=command_devices)
