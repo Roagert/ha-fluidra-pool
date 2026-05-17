@@ -99,3 +99,42 @@ def test_dry_run_write_cli_does_not_need_credentials(capsys):
     assert out["dry_run"] is True
     assert out["request"]["component_id"] == 15
     assert out["request"]["desiredValue"] == 250
+
+
+def test_login_command_can_save_existing_access_token(tmp_path, capsys):
+    cli = load_cloud_module()
+    cache = tmp_path / "token.json"
+
+    rc = cli.main(["--access-token", "abc123", "--token-cache", str(cache), "login"])
+    out = json.loads(capsys.readouterr().out)
+    saved = json.loads(cache.read_text())
+
+    assert rc == 0
+    assert out["ok"] is True
+    assert out["cached"] is True
+    assert out["has_refresh_token"] is False
+    assert saved["access_token"] == "abc123"
+
+
+def test_get_client_refreshes_expired_cached_token(tmp_path, monkeypatch):
+    cli = load_cloud_module()
+    cache = tmp_path / "token.json"
+    cli.save_tokens(cache, cli.AuthTokens(access_token="old", refresh_token="refresh", expires_at=1))
+
+    def fake_refresh(refresh_token, *, timeout=20.0):
+        assert refresh_token == "refresh"
+        return cli.FluidraCloudClient("new", timeout=timeout), cli.AuthTokens(
+            access_token="new",
+            refresh_token="refresh",
+            expires_at=9999999999,
+        )
+
+    monkeypatch.setattr(cli.FluidraCloudClient, "refresh", staticmethod(fake_refresh))
+    parser = cli.build_parser()
+    args = parser.parse_args(["--token-cache", str(cache), "devices"])
+
+    client = cli.get_client(args)
+    saved = json.loads(cache.read_text())
+
+    assert client.access_token == "new"
+    assert saved["access_token"] == "new"
