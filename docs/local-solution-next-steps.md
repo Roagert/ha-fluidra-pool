@@ -22,28 +22,54 @@ Goal: move from the confirmed cloud solution to a verified local/non-cloud path 
 
 The official iAquaLink+ app binary contains generic local UDP control strings (`MobileCommandAndControlLocalUdp`, `sendUDPCommand`, `udpKey`, HMAC/CRC helpers), but the `amt` snapshot does not expose `commandAndControl.localUdp` for this device.
 
-Evidence needed:
+Important capture-vantage correction:
 
-- Does the phone app send any LAN UDP packet to/from `192.168.1.29` while performing a cloud-visible command?
+- Thomas's workstation is a normal Wi‑Fi client: `192.168.1.62` on `wlp9s0`.
+- The heat pump is another Wi‑Fi client: `192.168.1.29` / `ac:15:18:98:15:f0`.
+- A normal Wi‑Fi client capture will only see its own unicast traffic plus broadcast/multicast. It will **not** see heatpump↔cloud unicast traffic or phone↔heatpump unicast traffic, because those frames are exchanged through the AP and are encrypted per station.
+- Therefore prior workstation captures proving `0 UDP` only prove there was no UDP between the workstation and heat pump. They do **not** prove the heat pump is not talking UDP/TCP to cloud, and they do not observe the heat pump's cloud connection.
+
+Evidence needed from the correct vantage point:
+
+- Router/AP WAN/LAN capture: what IPs/ports does `192.168.1.29` use for cloud?
+- AP/bridge capture or monitor-mode capture with Wi‑Fi keys: does the phone app send LAN UDP to/from `192.168.1.29` while performing a cloud-visible command?
 - Does the heat pump emit broadcast/multicast discovery traffic?
 - Is any local packet correlated with writes to components `13`, `14`, or `15`?
 
-Safe capture command on a router/AP/Linux bridge:
+Correct capture options:
+
+1. **Best: router/AP capture** — capture on the gateway/AP that routes `192.168.1.29` to the internet. This sees heatpump↔cloud traffic.
+2. **Good: managed switch/AP mirror** — mirror the AP uplink or heat-pump VLAN to a wired capture host.
+3. **Possible: Wi‑Fi monitor mode** — requires an adapter that supports monitor mode, same channel as AP, and WPA/WPA2 decryption material/session capture. More fragile.
+4. **Not enough: normal laptop Wi‑Fi tcpdump** — only sees laptop↔heatpump ARP/ICMP/probes and broadcast/multicast.
+
+Router/AP capture command, if the router supports shell/tcpdump:
 
 ```bash
-sudo tcpdump -i any -nn -s0 -w fluidra-local.pcap \
-  'host 192.168.1.29 and (udp or arp or icmp)'
+# Run on router/AP, not on the laptop:
+tcpdump -i any -nn -s0 -w /tmp/fluidra-router.pcap \
+  'host 192.168.1.29'
 ```
 
-Suggested harmless capture sequence:
+If storage is limited:
 
-1. Start capture.
-2. Open iAquaLink+ on the same LAN as the heat pump.
-3. Refresh the heat-pump screen.
-4. Change setpoint by +1 °C in the official app.
-5. Restore setpoint.
-6. Stop capture.
-7. Compare packet timestamps with cloud component `15` timestamps.
+```bash
+# Run on router/AP and stream to the workstation:
+ssh root@192.168.1.1 \
+  "tcpdump -i any -nn -s0 -U -w - 'host 192.168.1.29'" \
+  > fluidra-router.pcap
+```
+
+Suggested harmless capture sequence from the correct vantage point:
+
+1. Start router/AP capture for `host 192.168.1.29`.
+2. Run `python3 scripts/fluidra_cloud.py status` to record current cloud state.
+3. Open iAquaLink+ on the same LAN as the heat pump.
+4. Refresh the heat-pump screen.
+5. Change setpoint by +1 °C in the official app or via cloud CLI `--yes` if intentionally testing cloud command delivery.
+6. Restore setpoint.
+7. Stop capture.
+8. Compare packet timestamps with cloud component `15` timestamps.
 
 Do not send crafted UDP until a packet layout/key is recovered from real traffic or code.
 
