@@ -131,7 +131,11 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
         """Start the WebSocket listener task if not already running."""
         if self._ws_task is None or self._ws_task.done():
             self._ws_running = True
-            self._ws_task = self.hass.async_create_task(self._ws_listener())
+            # Background task: an endless listener must not be tracked by HA,
+            # otherwise bootstrap waits for it until its startup timeout.
+            self._ws_task = self.hass.async_create_background_task(
+                self._ws_listener(), "fluidra_pool_ws_listener"
+            )
             _LOGGER.info("WebSocket listener task started")
 
     async def _ws_listener(self) -> None:
