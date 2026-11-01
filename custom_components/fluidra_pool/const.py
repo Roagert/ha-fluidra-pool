@@ -70,26 +70,3 @@ ERROR_CODES = {
     "W004": "Maintenance required",
     "W005": "High water temperature warning"
 }
-
-# Critical error codes that should show device as "off"
-CRITICAL_ERROR_CODES = {
-    "E001",  # No water flow
-    "E002",  # Water temp sensor error
-    "E004",  # High pressure alarm  
-    "E005",  # Low pressure alarm
-    "E006",  # Compressor overload
-    "E009",  # Communication error
-    "E010",  # Power supply error
-    "E014",  # Phase sequence error
-    "E016"   # Water flow switch error
-}
-
-# Flow-related error codes
-FLOW_ERROR_CODES = {
-    "E001",  # No water flow detected
-    "E016"   # Water flow switch error
-}
-
-# Smart Auto mode configuration
-SMART_AUTO_DEADBAND = 1.0  # °C deadband to prevent rapid switching
-SMART_AUTO_MODE_VALUE = 2  # Component 14 value for Smart Auto mode 

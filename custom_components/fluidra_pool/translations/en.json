@@ -33,5 +33,21 @@
       "already_configured": "This Fluidra account is already configured.",
       "reauth_successful": "Logged in again."
     }
+  },
+  "entity": {
+    "climate": {
+      "heat_pump": {
+        "name": "Pool heat pump",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "smart": "Smart",
+              "boost": "Boost",
+              "silence": "Silence"
+            }
+          }
+        }
+      }
+    }
   }
 }

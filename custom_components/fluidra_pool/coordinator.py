@@ -88,7 +88,7 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator[FluidraData]):
         await self.async_request_refresh()
 
     # --- compat shim for pre-T10/T11 entities; delete in T10/T11 ---
-    # climate.py, sensor.py and button.py still read the old coordinator's attributes.
+    # sensor.py and button.py still read the old coordinator's attributes.
     consumer_data = user_profile_data = pool_status_data = user_pools_data = {}  # fetches gone
 
     @property
@@ -129,16 +129,6 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator[FluidraData]):
             "device_id": self.device_id,
             "error_description": ERROR_CODES.get(device["error_code"], "Unknown error"),
         }
-
-    async def set_component_value(self, device_id: str, component_id: Any, value: Any) -> bool:
-        """Old command API: raises HomeAssistantError on failure, else True."""
-        await self.async_set_component(device_id, int(component_id), value)
-        return True
-
-    set_power_value = set_temperature_value = set_component_value
-
-    async def schedule_quick_update(self) -> None:
-        """Nothing to do: async_set_component already requests the refresh."""
 
 
 def _legacy_device(info: dict[str, Any]) -> dict[str, Any]:
