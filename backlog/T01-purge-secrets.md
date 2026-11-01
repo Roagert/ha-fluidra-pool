@@ -3,7 +3,7 @@ id: T01
 title: Purge secrets and PII from git history
 phase: 0-safety
 points: 3
-status: todo
+status: done
 depends_on: []
 owner: agent
 ---
@@ -26,14 +26,22 @@ In a **fresh mirror clone in the scratchpad** (never in `/home/user/ha-fluidra-p
 4. Verify, then report. **Do not push** — the lead pushes after checking.
 
 ## Acceptance criteria
-- [ ] `git rev-list --all | xargs git grep -nE '<password>|eyJraWQiOi|<email>'` in the rewritten clone returns nothing.
-- [ ] The 4 removed files do not exist in any commit (`git log --all -- <path>` empty).
-- [ ] Commit count per branch unchanged except commits that only touched removed files.
-- [ ] `custom_components/` tree at the tip of `main` is byte-identical to before (`git diff <old-main> <new-main> -- custom_components` empty).
-- [ ] Report lists old→new tip SHAs for both branches and the exact push commands.
+- [x] `git rev-list --all | xargs git grep -nE '<password>|eyJraWQiOi|<email>'` in the rewritten clone returns nothing.
+- [x] The 4 removed files do not exist in any commit (`git log --all -- <path>` empty).
+- [x] Commit count per branch unchanged except commits that only touched removed files.
+- [x] `custom_components/` tree at the tip of `main` is byte-identical to before (`git diff <old-main> <new-main> -- custom_components` empty).
+- [x] Report lists old→new tip SHAs for both branches and the exact push commands.
 
 ## Out of scope
 Deleting RE dumps or other cleanup (T02). Changing the password (U01).
 
 ## Verify
 Commands above, run in the scratch clone.
+
+## Log
+- 2026-11-01: rewritten in a scratch clone; lead re-verified (all-blob scan, removed
+  paths, `custom_components` tree `fc5df8a` unchanged), then force-pushed with lease:
+  `main` bfb14c4 → 5f6799a, `feat/fluidra-local-cli` f3ec897 → 573f973. `dev`/`master`
+  scanned clean (predate the leaks), left untouched. Commit 4b7340e's message also
+  redacted. Remaining exposure outside our control: fork `kifeo/ha-fluidra-pool`,
+  GitHub-cached `refs/pull/10`, and the author email in commit metadata → U01.

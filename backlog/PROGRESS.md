@@ -1,10 +1,10 @@
-# Progress: 0%  [....................]  (0/75 points)
+# Progress: 4%  [....................]  (3/75 points)
 
 in_progress counts half. Regenerate with `python3 backlog/progress.py`.
 
 | ID | Task | Phase | Pts | Status | Owner |
 |---|---|---|---|---|---|
-| T01 | Purge secrets and PII from git history | 0-safety | 3 | todo | agent |
+| T01 | Purge secrets and PII from git history | 0-safety | 3 | done | agent |
 | T02 | Repo hygiene — delete stale duplicates, dumps, junk | 1-foundation | 3 | todo | agent |
 | T03 | Add Karpathy guidelines + ECC review agents | 1-foundation | 1 | todo | agent |
 | T04 | Test harness + CI (pytest, hassfest, HACS) | 1-foundation | 3 | todo | agent |
