@@ -38,28 +38,25 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator[FluidraData]):
             ),
         )
         self.api = api
-        self.uiconfig: dict[str, dict[str, Any] | None] = {}  # fetched once per device
 
     async def _async_update_data(self) -> FluidraData:
         """Read all devices and their components; keep pushed values newer than the poll."""
-        old = self.data or {}
         data: FluidraData = {}
         failed: FluidraConnectionError | None = None
         try:
             for info in await self.api.async_get_devices():
                 device_id = info["id"]
-                if device_id not in self.uiconfig:
-                    self.uiconfig[device_id] = await self.api.async_get_uiconfig(device_id)
                 try:
                     components = await self.api.async_get_components(device_id)
                 except FluidraConnectionError as err:  # one bad device must not hide the others
-                    _LOGGER.debug("Reading device %s failed: %s", device_id, err)
+                    # Warn when the device drops out (or is missing from the start), not every poll.
+                    dropped = self.data is None or (
+                        device_id in self.data and self.last_update_success
+                    )
+                    level = logging.WARNING if dropped else logging.DEBUG
+                    _LOGGER.log(level, "Reading device %s failed: %s", device_id, err)
                     failed = err
                     continue
-                stored = old.get(device_id, {}).get("components", {})
-                for component_id, component in components.items():
-                    if stored.get(component_id, {}).get("ts", 0) > component.get("ts", 0):
-                        components[component_id] = stored[component_id]
                 data[device_id] = {"info": info, "components": components}
         except FluidraAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
@@ -67,6 +64,12 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator[FluidraData]):
             raise UpdateFailed(str(err)) from err
         if failed and not data:
             raise UpdateFailed(str(failed)) from failed
+        # After the reads: a push may have arrived for a device read earlier in this poll.
+        for device_id, device in data.items():
+            stored = (self.data or {}).get(device_id, {}).get("components", {})
+            for component_id, component in device["components"].items():
+                if stored.get(component_id, {}).get("ts", 0) > component.get("ts", 0):
+                    device["components"][component_id] = stored[component_id]
         return data
 
     @callback
@@ -81,7 +84,9 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator[FluidraData]):
         device["components"][component_id] = {
             **stored, "id": component_id, "reportedValue": value, "ts": ts
         }
-        self.async_set_updated_data(self.data)
+        # Not async_set_updated_data: that would postpone the next poll, cancel a requested
+        # re-read and mark a failed poll as successful.
+        self.async_update_listeners()
 
     async def async_set_component(self, device_id: str, component_id: int, value: Any) -> None:
         """Send a command, show the new value at once, re-read the device shortly after."""

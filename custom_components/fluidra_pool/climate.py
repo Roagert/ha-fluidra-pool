@@ -2,6 +2,7 @@
 from typing import Any
 
 from homeassistant.components.climate import (
+    ATTR_HVAC_MODE,
     ClimateEntity,
     ClimateEntityFeature,
     HVACAction,
@@ -121,7 +122,9 @@ class FluidraHeatPump(FluidraEntity, ClimateEntity):
         await self._send((MODE, MODE_VALUES[self._mode[0], preset_mode]))
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
-        """Set the setpoint (HA checks the 15.0-40.0 °C range)."""
+        """Set the HVAC mode if one is given, then the setpoint (HA checks 15.0-40.0 °C)."""
+        if (hvac_mode := kwargs.get(ATTR_HVAC_MODE)) in self.hvac_modes:
+            await self.async_set_hvac_mode(hvac_mode)
         await self._send((SETPOINT, round(kwargs[ATTR_TEMPERATURE] * 10)))
 
     async def async_turn_on(self) -> None:

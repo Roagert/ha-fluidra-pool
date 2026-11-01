@@ -1,5 +1,6 @@
 """Coordinator + setup tests: boot failures, poll failures, pushes, all devices, commands."""
 from datetime import timedelta
+import logging
 from unittest.mock import patch
 
 from aioresponses import aioresponses
@@ -15,11 +16,7 @@ from yarl import URL
 
 from custom_components.fluidra_pool.api import FluidraApi
 from custom_components.fluidra_pool.auth import COGNITO_URL, FluidraConnectionError
-from custom_components.fluidra_pool.const import (
-    API_ENDPOINT_DEVICE_UICONFIG,
-    API_ENDPOINT_SET_COMPONENT_VALUE,
-    DOMAIN,
-)
+from custom_components.fluidra_pool.const import API_ENDPOINT_SET_COMPONENT_VALUE, DOMAIN
 
 from .conftest import COGNITO_OK, DEVICE_ID, DEVICES, DEVICES_URL
 
@@ -94,6 +91,35 @@ async def test_push_applied_unless_older(
     assert hass.states.get(water).state == "27.0"
 
 
+async def test_push_keeps_poll_schedule_and_failure(
+    hass: HomeAssistant, config_entry, mock_api, mock_ws
+) -> None:
+    """A push only updates the entities: the next poll, a pending re-read and a failed poll stay."""
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    coordinator = config_entry.runtime_data
+    water = entity_id(hass, "sensor", "water_temperature")
+    polls = mock_api.requests[("GET", URL(DEVICES_URL))]
+    next_poll = coordinator._unsub_refresh
+    assert next_poll is not None
+
+    await coordinator.async_request_refresh()  # the re-read after a command
+    mock_ws.push(deviceId=DEVICE_ID, componentId="19", reportedValue=270, ts=TS + 1)
+    await hass.async_block_till_done()
+    assert hass.states.get(water).state == "27.0"
+    assert coordinator._unsub_refresh is next_poll  # not moved back by the push
+    polls_before = len(polls)
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=2))
+    await hass.async_block_till_done()
+    assert len(polls) == polls_before + 1  # not cancelled by the push
+
+    with patch.object(FluidraApi, "async_get_components", side_effect=FluidraConnectionError):
+        await coordinator.async_refresh()
+    mock_ws.push(deviceId=DEVICE_ID, componentId="19", reportedValue=275, ts=TS + 2)
+    await hass.async_block_till_done()
+    assert not coordinator.last_update_success
+    assert hass.states.get(water).state == STATE_UNAVAILABLE
+
+
 TWO_DEVICES = [*DEVICES, {**DEVICES[0], "id": OTHER_ID, "sn": OTHER_ID}]
 
 
@@ -108,10 +134,7 @@ async def test_all_devices_polled_and_subscribed(
     assert list(coordinator.data) == [DEVICE_ID, OTHER_ID]
     assert coordinator.data[OTHER_ID]["info"]["id"] == OTHER_ID
     assert coordinator.data[OTHER_ID]["components"][15]["reportedValue"] == 280
-    assert coordinator.uiconfig == {DEVICE_ID: {}, OTHER_ID: None}  # a 500 uiconfig is tolerated
-    for device_id in (DEVICE_ID, OTHER_ID):  # fetched once, not every poll
-        url = URL(API_ENDPOINT_DEVICE_UICONFIG.format(device_id=device_id))
-        assert len(mock_api.requests[("GET", url)]) == 1
+    assert not [url for _, url in mock_api.requests if "uiconfig" in url.path]  # diagnostics only
     assert mock_ws.subscribed == [DEVICE_ID, OTHER_ID]
 
 
@@ -157,3 +180,56 @@ async def test_one_failing_device_does_not_take_down_the_others(
     assert coordinator.last_update_success
     assert list(coordinator.data) == [DEVICE_ID]  # the failing device's entities go unavailable
     assert hass.states.get(entity_id(hass, "sensor", "water_temperature")).state == "26.5"
+
+
+@pytest.mark.parametrize("cloud_devices", [TWO_DEVICES])
+async def test_push_during_poll_kept(hass: HomeAssistant, config_entry, mock_api, mock_ws) -> None:
+    """A push for a device the running poll has read already is not overwritten by that poll."""
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    coordinator = config_entry.runtime_data
+    real = FluidraApi.async_get_components
+
+    async def push_meanwhile(self, device_id):
+        if device_id == OTHER_ID:  # DEVICE_ID is read first
+            coordinator.async_handle_push(DEVICE_ID, 19, 270, TS + 1)
+        return await real(self, device_id)
+
+    with patch.object(FluidraApi, "async_get_components", push_meanwhile):
+        await coordinator.async_refresh()
+    assert coordinator.data[DEVICE_ID]["components"][19]["reportedValue"] == 270
+
+
+@pytest.mark.parametrize("cloud_devices", [TWO_DEVICES])
+async def test_dropped_device_warns_once(
+    hass: HomeAssistant, config_entry, mock_api, mock_ws, caplog
+) -> None:
+    """A warning when a device drops out of the data (or is missing from the start), not every poll."""
+    real = FluidraApi.async_get_components
+    failing = {OTHER_ID}
+
+    async def components(self, device_id):
+        if device_id in failing:
+            raise FluidraConnectionError("HTTP 500")
+        return await real(self, device_id)
+
+    def warnings() -> int:
+        found = [r for r in caplog.records if r.levelno == logging.WARNING and "Reading device" in r.msg]
+        caplog.clear()
+        return len(found)
+
+    with patch.object(FluidraApi, "async_get_components", components):
+        assert await hass.config_entries.async_setup(config_entry.entry_id)
+        coordinator = config_entry.runtime_data
+        assert warnings() == 1  # first refresh: OTHER_ID gets no entities
+        await coordinator.async_refresh()
+        assert warnings() == 0  # still missing
+        failing.clear()
+        await coordinator.async_refresh()
+        failing.add(OTHER_ID)
+        await coordinator.async_refresh()
+        assert warnings() == 1  # back, then dropped again
+        failing.add(DEVICE_ID)
+        await coordinator.async_refresh()
+        assert warnings() == 1  # the whole poll fails: DEVICE_ID drops
+        await coordinator.async_refresh()
+        assert warnings() == 0  # HA reports the failed polls

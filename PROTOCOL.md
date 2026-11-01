@@ -126,7 +126,7 @@ Rio, Nodon), `iaqualink_plus` (app).
 The cloud chooses the command channel per device (`MobileCommandAndControl`): `…Cloud`
 (WebSocket relay), `…LocalUdp` (LAN UDP to an iQBridge RS) or `…Ble` (iQBridge RS).
 
-**Local UDP (iQBridge RS only)** — `local_client.py` is an unwired stub of this:
+**Local UDP (iQBridge RS only)** — not implemented:
 
 - Endpoint from `commandAndControl.localUdp` (host, port, token). Port candidates from
   strings: 9003 (most likely), 8902, 9090, 9298, 5781, 5750, 1800, 1801, 3317, 3844.

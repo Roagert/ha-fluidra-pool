@@ -94,5 +94,6 @@ class FluidraPoolConfigFlow(ConfigFlow, domain=DOMAIN):
             }
             if self.source == SOURCE_REAUTH:
                 return self.async_update_reload_and_abort(self._get_reauth_entry(), data=data)
-            return self.async_create_entry(title=f"Fluidra Pool ({self._username})", data=data)
+            # Not the e-mail: Home Assistant writes entry titles to its log.
+            return self.async_create_entry(title="Fluidra Pool", data=data)
         return self.async_show_form(step_id=step_id, data_schema=schema, errors={"base": error})

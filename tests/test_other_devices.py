@@ -55,7 +55,7 @@ def warnings(caplog) -> list[str]:
 async def test_other_devices(
     hass: HomeAssistant, config_entry, mock_api, mock_ws, caplog
 ) -> None:
-    """Setup succeeds next to a heat pump although their uiconfig answers 500."""
+    """Setup succeeds next to a heat pump; no warning, no climate, generic sensors."""
     caplog.set_level(logging.DEBUG)
     assert await hass.config_entries.async_setup(config_entry.entry_id)
     await hass.async_block_till_done()
@@ -64,8 +64,6 @@ async def test_other_devices(
     await hass.async_block_till_done()
 
     assert config_entry.state is ConfigEntryState.LOADED
-    assert coordinator.uiconfig == {DEVICE_ID: {}, **{d["id"]: None for d in OTHER_DEVICES}}
-    assert caplog.text.count("No UI config for") == len(OTHER_DEVICES)  # once each, at debug
     entries = er.async_entries_for_config_entry(er.async_get(hass), config_entry.entry_id)
     assert [e.unique_id for e in entries if e.domain == CLIMATE] == [
         f"fluidra_{DEVICE_ID}_climate_heatpump"

@@ -35,7 +35,8 @@ MFA login and diagnostics. Requires Home Assistant 2025.3 or newer.
   (E001–W005) are gone.
 - The options and the `fluidra_pool.dump_api_data` service are removed (see Removed).
 - The config entry is migrated to version 2 automatically (login kept; the stored device,
-  component and polling options are dropped).
+  component and polling options are dropped). Its title `Fluidra Pool (<e-mail>)` becomes
+  `Fluidra Pool`, so the e-mail no longer shows in the log; a title you chose is kept.
 
 ### Fixed
 
@@ -54,6 +55,8 @@ MFA login and diagnostics. Requires Home Assistant 2025.3 or newer.
   full password login on every check; a network error now retries instead of asking you to
   log in again.
 - A failed command shows an error instead of looking successful.
+- A device the cloud reports offline shows as unavailable instead of with its last values.
+- `climate.set_temperature` with `hvac_mode` now also sets the mode.
 
 ### Added
 
@@ -66,6 +69,8 @@ MFA login and diagnostics. Requires Home Assistant 2025.3 or newer.
   device info with model, model id (SKU), firmware and serial.
 - Other devices: **Components** sensor and a disabled **Component N** sensor with the raw
   value of each numeric component, until a proper mapping exists.
+- A log warning when WebSocket push stays unavailable (values then update by polling every
+  5 minutes), and a log message when it is back.
 
 ### Removed
 
@@ -75,3 +80,4 @@ MFA login and diagnostics. Requires Home Assistant 2025.3 or newer.
   ⋮ → Download diagnostics.
 - Refresh All Data button: use the `homeassistant.update_entity` action.
 - The `boto3` / `pycognito` dependency (login is plain HTTPS now).
+- The unused local UDP stub `local_client.py`.

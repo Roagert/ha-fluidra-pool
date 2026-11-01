@@ -112,6 +112,18 @@ async def test_unavailable_without_component(
     assert hass.states.get(entity_id).state == STATE_UNAVAILABLE
 
 
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
+async def test_unavailable_while_offline(hass: HomeAssistant, coordinator) -> None:
+    """The cloud keeps an offline pump's last values and accepts commands: show it unavailable."""
+    info = coordinator.data[DEVICE_ID]["info"]
+    info["connectivity"] = {"connected": False}
+    coordinator.async_update_listeners()
+    assert {hass.states.get(entity_id).state for entity_id in ENTITIES} == {STATE_UNAVAILABLE}
+    del info["connectivity"]  # not reported: assume online
+    coordinator.async_update_listeners()
+    assert STATE_UNAVAILABLE not in {hass.states.get(entity_id).state for entity_id in ENTITIES}
+
+
 async def test_error_information_shows_alarms(hass: HomeAssistant, coordinator) -> None:
     alarm = {"type": "error", "errorCode": "E03"}  # the alarm format is unverified
     coordinator.data[DEVICE_ID]["info"]["alarms"] = [alarm]

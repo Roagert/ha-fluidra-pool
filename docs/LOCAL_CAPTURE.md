@@ -53,7 +53,7 @@ Press Enter in Terminal 2 at every ▶ to record that clock time.
 
 Put your ▶ times in `--marks` (comma-separated, any number):
 
-    python3 scripts/analyze_capture.py captures/heatpump.pcap --marks 14:01:00,14:05:00,14:05:20,14:05:50,14:06:20,14:06:50,14:07:20
+    python3 scripts/analyze_capture.py captures/heatpump.pcap --hp-ip 192.168.1.29 --hp-mac ac:15:18:98:15:f0 --marks 14:01:00,14:05:00,14:05:20,14:05:50,14:06:20,14:06:50,14:07:20
 
 Send back **only the analyzer output** (copy the terminal text), never the pcap: it can contain
 tokens and personal data. The output has no payload bytes; do not add `--payload`.

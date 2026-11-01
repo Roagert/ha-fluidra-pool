@@ -45,8 +45,17 @@ class FluidraEntity(CoordinatorEntity[FluidraPoolDataUpdateCoordinator]):
 
     @property
     def available(self) -> bool:
-        """Unavailable after a failed poll or when the account no longer lists the device."""
-        return super().available and self._device_id in self.coordinator.data
+        """Unavailable after a failed poll, when the account no longer lists the device, or
+        while the cloud reports it offline (it keeps the last values and accepts commands).
+
+        UNVERIFIED: connectivity.connected is read as the device's online state; confirm in U03.
+        """
+        device = self.coordinator.data.get(self._device_id)
+        return (
+            super().available
+            and device is not None
+            and bool((device["info"].get("connectivity") or {}).get("connected", True))
+        )
 
     def _value(self, component_id: int) -> Any:
         """The reported value of a component; None while the device does not report it."""

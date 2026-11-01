@@ -60,7 +60,6 @@ class FluidraAuth:
             "InitiateAuth",
             {
                 "AuthFlow": "USER_PASSWORD_AUTH",
-                "ClientId": COGNITO_CLIENT_ID,
                 "AuthParameters": {"USERNAME": self._username, "PASSWORD": self._password},
             },
         )
@@ -71,7 +70,6 @@ class FluidraAuth:
             "RespondToAuthChallenge",
             {
                 "ChallengeName": self._mfa_challenge,
-                "ClientId": COGNITO_CLIENT_ID,
                 "Session": session,
                 "ChallengeResponses": {
                     "USERNAME": self._username,
@@ -91,7 +89,6 @@ class FluidraAuth:
                         "InitiateAuth",
                         {
                             "AuthFlow": "REFRESH_TOKEN_AUTH",
-                            "ClientId": COGNITO_CLIENT_ID,
                             "AuthParameters": {"REFRESH_TOKEN": self.refresh_token},
                         },
                     )
@@ -109,7 +106,7 @@ class FluidraAuth:
 
     async def _authenticate(self, action: str, payload: dict[str, Any]) -> str:
         """Run one Cognito auth call and store the tokens it returns."""
-        data = await self._post(action, payload)
+        data = await self._post(action, {"ClientId": COGNITO_CLIENT_ID, **payload})
         if result := data.get("AuthenticationResult"):
             self._access_token = result["AccessToken"]
             self._expires_at = time.monotonic() + result["ExpiresIn"]

@@ -143,6 +143,17 @@ async def test_set_temperature(hass: HomeAssistant, climate, puts) -> None:
     assert puts == [(15, 265)]
 
 
+@pytest.mark.parametrize(
+    ("hvac_mode", "expected"),
+    [(COOL, [(14, 1), (13, 1), (15, 265)]), (OFF, [(13, 0), (15, 265)])],
+)
+async def test_set_temperature_with_hvac_mode(
+    hass: HomeAssistant, climate, puts, hvac_mode, expected
+) -> None:
+    await call(hass, SERVICE_SET_TEMPERATURE, **{ATTR_TEMPERATURE: 26.5, ATTR_HVAC_MODE: hvac_mode})
+    assert puts == expected  # the mode first, then the setpoint
+
+
 async def test_failed_put_raises_and_stops(hass: HomeAssistant, climate, mock_api) -> None:
     mock_api.put(put_url(14), status=500)
     with pytest.raises(HomeAssistantError):

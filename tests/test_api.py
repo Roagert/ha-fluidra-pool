@@ -97,6 +97,17 @@ async def test_get_uiconfig_none_on_http_error(api, cloud) -> None:
     assert await api.async_get_uiconfig(DEVICE_ID) is None
 
 
+async def test_device_id_escaped_in_urls(api, cloud) -> None:
+    """A device id from the cloud cannot point a request at another API path."""
+    device_id, base = "x/../../pools", f"{API_DEVICES_URL}/x%2F..%2F..%2Fpools"
+    cloud.get(f"{base}/components?deviceType=connected", payload=[])
+    cloud.get(f"{base}/uiconfig?appId=iaq&deviceType=connected", payload={})
+    cloud.put(f"{base}/components/15?deviceType=connected", payload={})
+    assert await api.async_get_components(device_id) == {}
+    assert await api.async_get_uiconfig(device_id) == {}
+    assert await api.async_set_component(device_id, 15, 300) == {}
+
+
 async def test_set_component_body(api, cloud) -> None:
     cloud.put(SET_URL, payload={"id": 15, "desiredValue": 300})
     assert await api.async_set_component(DEVICE_ID, 15, 300) == {"id": 15, "desiredValue": 300}
@@ -282,3 +293,108 @@ def test_push_with_bad_ts_is_ignored() -> None:
     """A non-numeric ts must not raise in the coordinator callback and kill the listener."""
     raw = json.dumps({"deviceId": DEVICE_ID, "componentId": "13", "reportedValue": 1, "ts": "x"})
     assert api_module._parse_push(raw) is None
+
+
+@pytest.mark.parametrize("ts", [float("inf"), "inf", float("nan"), 4e9, 4e12])
+def test_push_ts_not_finite_or_future_is_now(ts) -> None:
+    """Such a ts would outrank every later poll and push of the component."""
+    raw = json.dumps({"deviceId": DEVICE_ID, "componentId": "13", "reportedValue": 1, "ts": ts})
+    assert api_module._parse_push(raw)[3] == pytest.approx(time.time(), abs=5)
+
+
+@pytest.mark.parametrize("device_id", [1, None, ["x"], {"a": 1}])
+def test_push_with_non_str_device_id_is_ignored(device_id) -> None:
+    raw = json.dumps({"deviceId": device_id, "componentId": "13", "reportedValue": 1})
+    assert api_module._parse_push(raw) is None
+
+
+def test_deeply_nested_push_is_ignored() -> None:
+    raw = '{"deviceId": "x", "componentId": 13, "reportedValue": ' + "[" * 100_000 + "]" * 100_000 + "}"
+    assert api_module._parse_push(raw) is None
+
+
+async def test_failing_update_does_not_stop_the_listener(
+    hass: HomeAssistant, ws_server, backoff, caplog
+) -> None:
+    async def handler(request):
+        ws = web.WebSocketResponse()
+        await ws.prepare(request)
+        await ws.receive_json()
+        for value in (1, 2):
+            await ws.send_json({"deviceId": DEVICE_ID, "componentId": "13", "reportedValue": value})
+        await ws.receive()  # open until the client goes away
+        return ws
+
+    await ws_server(handler)
+    values, got_second = [], asyncio.Event()
+
+    def on_update(device_id, component_id, value, ts):
+        values.append(value)
+        if value == 1:
+            raise ValueError("an entity rejected the value")
+        got_second.set()
+
+    api = FluidraApi(FakeAuth(), async_get_clientsession(hass))
+    task = hass.async_create_background_task(api.async_listen([DEVICE_ID], on_update), "ws")
+    await asyncio.wait_for(got_second.wait(), 5)
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert values == [1, 2]
+    assert backoff == []  # same connection, no reconnect
+    assert "Fluidra push update failed" in caplog.text
+
+
+class RejectedAuth(FakeAuth):
+    """Cognito rejects the login."""
+
+    async def async_get_access_token(self) -> str:
+        self.calls += 1
+        raise FluidraAuthError("NotAuthorizedException")
+
+
+async def test_listen_stops_on_auth_error(hass: HomeAssistant, backoff) -> None:
+    """Retrying a rejected password risks a Cognito lockout; the poll starts reauth instead."""
+    auth = RejectedAuth()
+    api = FluidraApi(auth, async_get_clientsession(hass))
+    async with asyncio.timeout(5):
+        await api.async_listen([DEVICE_ID], lambda *u: None)  # returns instead of retrying
+    assert (auth.calls, backoff) == (1, [])
+
+
+async def test_push_down_warns_once_then_restored(
+    hass: HomeAssistant, ws_server, backoff, caplog
+) -> None:
+    """At the 300 s cap the user learns that push is down (values still poll), then that it is back."""
+    caplog.set_level(logging.DEBUG)
+    attempts = 0
+
+    async def handler(request):
+        nonlocal attempts
+        attempts += 1
+        if attempts <= 7:
+            return web.Response(status=403)
+        ws = web.WebSocketResponse()
+        await ws.prepare(request)
+        await ws.receive_json()
+        await ws.close()
+        return ws
+
+    await ws_server(handler)
+    api = FluidraApi(FakeAuth(), async_get_clientsession(hass))
+    task = hass.async_create_background_task(api.async_listen([DEVICE_ID], lambda *u: None), "ws")
+    async with asyncio.timeout(5):
+        while len(backoff) < MAX_SLEEPS:
+            await asyncio.sleep(0.01)
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert backoff == [5, 10, 20, 40, 80, 160, 300, 300]
+    assert [
+        (r.levelno, r.getMessage()) for r in caplog.records
+        if r.name == api_module.__name__ and r.levelno >= logging.INFO
+    ] == [
+        (logging.WARNING, "Fluidra WebSocket push unavailable; retrying every 300 s; values update by polling"),
+        (logging.INFO, "Fluidra WebSocket push restored"),
+    ]

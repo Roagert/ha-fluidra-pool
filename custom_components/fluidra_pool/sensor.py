@@ -95,7 +95,16 @@ async def async_setup_entry(
     )
 
 
-class FluidraSensor(FluidraEntity, SensorEntity):
+class FluidraValueSensor(FluidraEntity, SensorEntity):
+    """A sensor that is unavailable while it has no value."""
+
+    @property
+    def available(self) -> bool:
+        """Unavailable while the component is not reported or its value is not plausible."""
+        return super().available and self.native_value is not None
+
+
+class FluidraSensor(FluidraValueSensor):
     """The value of one component."""
 
     entity_description: FluidraSensorDescription
@@ -110,11 +119,6 @@ class FluidraSensor(FluidraEntity, SensorEntity):
         super().__init__(coordinator, device_id, description.key)
         self.entity_description = description
         self._attr_translation_key = description.key
-
-    @property
-    def available(self) -> bool:
-        """Unavailable while the device does not report the component, or an implausible °C."""
-        return super().available and self.native_value is not None
 
     @property
     def native_value(self) -> float | None:
@@ -168,7 +172,7 @@ class FluidraComponentCountSensor(FluidraEntity, SensorEntity):
         return len(self.coordinator.data.get(self._device_id, {}).get("components", {}))
 
 
-class FluidraComponentSensor(FluidraEntity, SensorEntity):
+class FluidraComponentSensor(FluidraValueSensor):
     """The raw value of one component of a device we have no mapping for: no scaling, no unit.
 
     Disabled by default; the meaning of each component waits for reporters' diagnostics.
@@ -183,11 +187,6 @@ class FluidraComponentSensor(FluidraEntity, SensorEntity):
         super().__init__(coordinator, device_id, f"component_{component_id}")
         self._component = component_id
         self._attr_name = f"Component {component_id}"
-
-    @property
-    def available(self) -> bool:
-        """Unavailable while the component is not reported or reports a sentinel."""
-        return super().available and self.native_value is not None
 
     @property
     def native_value(self) -> Any:

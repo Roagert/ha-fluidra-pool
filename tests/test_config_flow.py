@@ -73,7 +73,7 @@ async def test_user_creates_entry(hass: HomeAssistant, mock_setup_entry) -> None
         result = await configure(hass, result, **LOGIN)
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["title"] == "Fluidra Pool (test-user)"
+    assert result["title"] == "Fluidra Pool"  # not the e-mail: HA logs entry titles
     assert result["data"] == {**LOGIN, "refresh_token": "test-refresh-token"}
     entry = result["result"]
     assert (entry.unique_id, entry.version) == ("fluidra_pool_test-user", 2)  # same as v1 ids
@@ -155,11 +155,19 @@ async def test_reauth_updates_login_and_reloads(
     assert len(mock_setup_entry.mock_calls) == 1  # reloaded
 
 
-async def test_v1_entry_migrates_and_loads(hass: HomeAssistant, mock_api, mock_ws) -> None:
+@pytest.mark.parametrize(
+    ("title", "migrated_title"),
+    [("Fluidra Pool (test-user)", "Fluidra Pool"), ("Pool house", "Pool house")],
+    ids=["v1-title", "renamed"],
+)
+async def test_v1_entry_migrates_and_loads(
+    hass: HomeAssistant, mock_api, mock_ws, title, migrated_title
+) -> None:
     """An entry created by the old code (version 1) loads without user action."""
     entry = MockConfigEntry(
         domain=DOMAIN,
         version=1,
+        title=title,
         unique_id="fluidra_pool_test-user",
         data={
             **LOGIN,
@@ -175,6 +183,7 @@ async def test_v1_entry_migrates_and_loads(hass: HomeAssistant, mock_api, mock_w
     assert entry.state is ConfigEntryState.LOADED
     assert (entry.version, entry.unique_id) == (2, "fluidra_pool_test-user")
     assert entry.data == {**LOGIN, "refresh_token": "test-refresh-token"}  # from the login
+    assert entry.title == migrated_title  # the e-mail goes, a name the user chose stays
 
 
 async def test_refresh_token_used_and_kept_current(

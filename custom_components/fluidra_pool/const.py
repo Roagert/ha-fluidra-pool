@@ -14,19 +14,16 @@ API_BASE_URL = "https://api.fluidra-emea.com"
 API_DEVICES_URL = f"{API_BASE_URL}/generic/devices"
 
 # New API Endpoints - Updated with correct working endpoints
-API_ENDPOINT_POOLS = f"{API_BASE_URL}/generic/pools"
 API_ENDPOINT_DEVICE_COMPONENTS = f"{API_BASE_URL}/generic/devices/{{device_id}}/components?deviceType=connected"
 API_ENDPOINT_DEVICE_UICONFIG = f"{API_BASE_URL}/generic/devices/{{device_id}}/uiconfig?appId=iaq&deviceType=connected"
 API_ENDPOINT_SET_COMPONENT_VALUE = f"{API_BASE_URL}/generic/devices/{{device_id}}/components/{{component_id}}?deviceType=connected"
 
 # AWS Cognito Configuration (based on the example)
 COGNITO_REGION = "eu-west-1"
-COGNITO_POOL_ID = "eu-west-1_OnopMZF9X"  # Verified from token
 COGNITO_CLIENT_ID = "g3njunelkcbtefosqm9bdhhq1"  # Verified from token
 
 # Update intervals
 QUICK_UPDATE_INTERVAL = timedelta(seconds=1)  # 1 second after control commands (immediate feedback)
-TOKEN_REFRESH_THRESHOLD = timedelta(minutes=10)
 
 # WebSocket configuration
 WS_URL = "wss://ws.fluidra-emea.com"

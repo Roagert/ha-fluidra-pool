@@ -117,8 +117,8 @@ def tls_sni(p):
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Summarise a heat-pump pcap/pcapng capture.")
     ap.add_argument("capture", type=Path)
-    ap.add_argument("--hp-ip", default="192.168.1.29")
-    ap.add_argument("--hp-mac", default="ac:15:18:98:15:f0", type=lambda m: bytes.fromhex(m.replace(":", "")))
+    ap.add_argument("--hp-ip", required=True)
+    ap.add_argument("--hp-mac", required=True, type=lambda m: bytes.fromhex(m.replace(":", "")))
     ap.add_argument("--marks", default="", help="clock times HH:MM:SS[,...]: list packets ±5 s around each")
     ap.add_argument("--payload", action="store_true", help="append 64 payload bytes (hex) to --marks lines")
     args = ap.parse_args(argv)
@@ -184,7 +184,7 @@ def main(argv=None):
     for title, hits in (
         ("LAN UDP/TCP with heat pump (DNS/DHCP excluded)",
          flows(lambda a, pt: pt is not None and any(a in net for net in LAN_NETS))),
-        ("broadcast/multicast from heat pump",  # private x.x.x.255 = broadcast on a /24 like Thomas's
+        ("broadcast/multicast from heat pump",  # private x.x.x.255 = broadcast on a typical home /24
          flows(lambda a, pt: a.is_multicast or a.is_private and a.packed[3] == 255)),
         ("MQTT port 1883/8883 or AWS IoT hostname", flows(lambda a, pt: pt in MQTT_PORTS)
          + sorted(h for h in hosts if ".iot." in h and h.endswith(".amazonaws.com"))),

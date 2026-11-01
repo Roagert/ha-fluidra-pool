@@ -45,7 +45,7 @@ MQTT bridge.
 Research by access-point packet capture only (`docs/LOCAL_CAPTURE.md`). Decision record
 `docs/LOCAL_DECISION.md` (T14): if the phone talks to the pump on the LAN during a setpoint
 change, implement that transport behind `FluidraApi` (T15); otherwise stay cloud-push.
-`local_client.py` (iQBridge RS UDP hypothesis) stays unwired.
+The unwired iQBridge RS UDP stub `local_client.py` is removed.
 
 ## Success criteria
 

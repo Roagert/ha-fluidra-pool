@@ -3,12 +3,14 @@ import asyncio
 from collections.abc import Callable, Iterable
 import json
 import logging
+import math
 import time
 from typing import Any
+from urllib.parse import quote
 
 import aiohttp
 
-from .auth import FluidraAuth, FluidraAuthError, FluidraConnectionError
+from .auth import TIMEOUT, FluidraAuth, FluidraAuthError, FluidraConnectionError
 from .const import (
     API_DEVICES_URL,
     API_ENDPOINT_DEVICE_COMPONENTS,
@@ -19,7 +21,6 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-TIMEOUT = aiohttp.ClientTimeout(total=15)
 HEARTBEAT = 30  # seconds between WebSocket pings
 BACKOFF_MIN, BACKOFF_MAX = 5, 300  # seconds between WebSocket reconnects
 STABLE_AFTER = 60  # a connection that stayed up this long resets the backoff
@@ -42,13 +43,13 @@ class FluidraApi:
 
     async def async_get_components(self, device_id: str) -> dict[int, dict[str, Any]]:
         """Return {component id: {"id", "reportedValue", "desiredValue"?, "ts"}}."""
-        url = API_ENDPOINT_DEVICE_COMPONENTS.format(device_id=device_id)
+        url = API_ENDPOINT_DEVICE_COMPONENTS.format(device_id=quote(device_id, safe=""))
         components = await self._json("GET", url)
         return {int(component["id"]): component for component in components}
 
     async def async_get_uiconfig(self, device_id: str) -> dict[str, Any] | None:
         """Return the device's UI config, or None when the cloud answers 4xx/5xx for it."""
-        url = API_ENDPOINT_DEVICE_UICONFIG.format(device_id=device_id)
+        url = API_ENDPOINT_DEVICE_UICONFIG.format(device_id=quote(device_id, safe=""))
         status, data = await self._request("GET", url)
         if status >= 400:  # e.g. 500 for some non-heat-pump devices (#4 #5)
             _LOGGER.debug("No UI config for %s: HTTP %d", device_id, status)
@@ -60,7 +61,7 @@ class FluidraApi:
     ) -> dict[str, Any]:
         """Ask the device to set a component to value; return the cloud's reply."""
         url = API_ENDPOINT_SET_COMPONENT_VALUE.format(
-            device_id=device_id, component_id=component_id
+            device_id=quote(device_id, safe=""), component_id=component_id
         )
         return await self._json("PUT", url, {"desiredValue": value}) or {}
 
@@ -69,7 +70,7 @@ class FluidraApi:
 
         device_ids is iterated again on every (re)connect.
         """
-        delay = BACKOFF_MIN
+        delay, warned = BACKOFF_MIN, False
         while True:
             connected_at = None
             try:
@@ -79,21 +80,36 @@ class FluidraApi:
                 ) as ws:
                     connected_at = time.monotonic()
                     _LOGGER.debug("WebSocket connected")
+                    if warned:
+                        _LOGGER.info("Fluidra WebSocket push restored")
+                        warned = False
                     for device_id in device_ids:
                         await ws.send_json({**SUBSCRIBE, "deviceId": device_id})
                     async for msg in ws:
                         if msg.type == aiohttp.WSMsgType.TEXT and (update := _parse_push(msg.data)):
-                            on_update(*update)
+                            try:
+                                on_update(*update)
+                            except Exception:
+                                _LOGGER.exception("Fluidra push update failed")
                 _LOGGER.debug("WebSocket closed")
-            except (
-                aiohttp.ClientError, TimeoutError, FluidraAuthError, FluidraConnectionError
-            ) as err:
+            except FluidraAuthError:
+                # Retrying could lock the account. The poll starts reauth; its reload restarts this.
+                _LOGGER.debug("WebSocket stopped: login rejected")
+                return
+            except (aiohttp.ClientError, TimeoutError, FluidraConnectionError) as err:
                 # Never log err itself: aiohttp errors can carry the URL, which holds the token.
                 _LOGGER.debug("WebSocket failed: %s", type(err).__name__)
             if connected_at is not None and time.monotonic() - connected_at >= STABLE_AFTER:
                 delay = BACKOFF_MIN
             _LOGGER.debug("WebSocket reconnecting in %d s", delay)
             await _sleep(delay)
+            if delay < BACKOFF_MAX <= delay * 2:  # the delay reaches the maximum
+                _LOGGER.warning(
+                    "Fluidra WebSocket push unavailable; retrying every %d s; "
+                    "values update by polling",
+                    BACKOFF_MAX,
+                )
+                warned = True
             delay = min(delay * 2, BACKOFF_MAX)
 
     async def _json(self, method: str, url: str, payload: Any = None) -> Any:
@@ -142,7 +158,11 @@ def _parse_push(raw: str) -> tuple[str, int, Any, float] | None:
         ts = float(event.get("ts") or time.time())
         if ts > 1e11:  # milliseconds (push format unverified); REST ts is in seconds
             ts /= 1000
-        return event["deviceId"], int(event["componentId"]), event["reportedValue"], ts
-    except (ValueError, TypeError, KeyError, AttributeError):
-        _LOGGER.debug("WebSocket message ignored (not a component update)")
-        return None
+        if not math.isfinite(ts) or ts > time.time() + 60:  # would outrank every later value
+            ts = time.time()
+        if isinstance(device_id := event["deviceId"], str):
+            return device_id, int(event["componentId"]), event["reportedValue"], ts
+    except (ValueError, TypeError, KeyError, AttributeError, RecursionError):
+        pass
+    _LOGGER.debug("WebSocket message ignored (not a component update)")
+    return None

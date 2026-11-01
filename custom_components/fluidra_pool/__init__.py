@@ -52,10 +52,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Version 1 also stored a device, a component and polling options: keep the login only."""
+    """Version 1 also stored a device, a component and polling options: keep the login only.
+
+    Its title held the e-mail, which Home Assistant logs; a title the user chose is kept.
+    """
     if entry.version == 1:
         data = {key: entry.data[key] for key in (CONF_USERNAME, CONF_PASSWORD)}
-        hass.config_entries.async_update_entry(entry, data=data, version=2)
+        title = entry.title
+        if title == f"Fluidra Pool ({data[CONF_USERNAME]})":
+            title = "Fluidra Pool"
+        hass.config_entries.async_update_entry(entry, data=data, title=title, version=2)
     return True
 
 

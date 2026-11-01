@@ -11,8 +11,9 @@ _spec = importlib.util.spec_from_file_location("analyze_capture", ROOT / "script
 ac = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(ac)
 
-HP, PHONE, ROUTER, CLOUD = "192.168.1.29", "192.168.1.50", "192.168.1.1", "203.0.113.10"
-HP_MAC, LAN_MAC = bytes.fromhex("ac15189815f0"), bytes.fromhex("020000000001")
+HP, PHONE, ROUTER, CLOUD = "192.0.2.29", "192.168.1.50", "192.0.2.1", "203.0.113.10"
+HP_MAC, LAN_MAC = bytes.fromhex("020000000001"), bytes.fromhex("020000000002")
+HP_ARGS = ("--hp-ip", HP, "--hp-mac", HP_MAC.hex(":"))
 MDNS_MAC = bytes.fromhex("01005e0000fb")
 IOT_HOST = "example-ats.iot.eu-west-1.amazonaws.com"
 T0 = 1_761_998_400  # 2025-11-01 12:00:00 UTC
@@ -106,7 +107,7 @@ def sample_pcap():
 def run(capsys, tmp_path, data, *args):
     path = tmp_path / "c.pcap"
     path.write_bytes(data)
-    ac.main([str(path), *args])
+    ac.main([str(path), *HP_ARGS, *args])
     return capsys.readouterr().out
 
 
@@ -127,7 +128,7 @@ def test_read_pcapng_ns_resolution():
 def test_sample_fixture(capsys):
     path = ROOT / "tests" / "fixtures" / "sample.pcap"
     assert path.read_bytes() == sample_pcap()  # committed file is exactly this synthetic capture
-    ac.main([str(path)])
+    ac.main([str(path), *HP_ARGS])
     out = capsys.readouterr().out
     assert "8 frames (1 not IPv4, 0 undecodable)" in out and ": 7 IPv4 packets" in out
     assert f"query  A    {IOT_HOST}  x1" in out and f"answer {IOT_HOST} -> {CLOUD}" in out
@@ -136,6 +137,15 @@ def test_sample_fixture(capsys):
             "udp 224.0.0.251 port 5353 (1 pkts)\n") in out
     assert "[!] broadcast/multicast from heat pump: udp 224.0.0.251 port 5353" in out
     assert f"[!] MQTT port 1883/8883 or AWS IoT hostname: tcp {CLOUD} port 8883 (2 pkts); {IOT_HOST}" in out
+
+
+@pytest.mark.parametrize("args", [[], ["--hp-ip", HP], ["--hp-mac", HP_MAC.hex(":")]])
+def test_hp_ip_and_mac_required(tmp_path, args):
+    """No built-in default: they would be one owner's LAN address and MAC."""
+    path = tmp_path / "c.pcap"
+    path.write_bytes(sample_pcap())
+    with pytest.raises(SystemExit):
+        ac.main([str(path), *args])
 
 
 def test_wan_only_sll_no_flags(capsys, tmp_path):
@@ -159,7 +169,7 @@ def test_marks_and_payload_redaction(capsys, tmp_path):
     mark = ac.clock(T0 + 31)  # local clock, so the test is timezone-independent
     out = run(capsys, tmp_path, sample_pcap(), "--marks", mark)
     assert f"Packets within ±5 s of {mark}" in out
-    assert "in  udp  192.168.1.50:50000 -> 192.168.1.29:9003  42 B" in out
+    assert f"in  udp  {PHONE}:50000 -> {HP}:9003  42 B" in out
     assert "8883" not in out.split("Packets within")[1]  # t0+1 is outside the window
     assert SECRET.hex() not in out and "secret" not in out
     assert SECRET.hex() in run(capsys, tmp_path, sample_pcap(), "--marks", mark, "--payload")
