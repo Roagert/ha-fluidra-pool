@@ -3,7 +3,7 @@ id: T03
 title: Add Karpathy guidelines + ECC review agents
 phase: 1-foundation
 points: 1
-status: todo
+status: done
 depends_on: [T02]
 owner: agent
 ---
@@ -27,6 +27,12 @@ and `.../scratchpad/ext/ECC/repo`.
 - No hooks, no settings.json, no MCP config.
 
 ## Acceptance criteria
-- [ ] The 6 files exist; each copied file carries source + MIT attribution.
-- [ ] `grep -rniE 'hook|npx|npm|mcp|80%' .claude/` returns nothing (or only harmless prose — list it).
-- [ ] No other files changed.
+- [x] The 6 files exist; each copied file carries source + MIT attribution.
+- [x] `grep -rniE 'hook|npx|npm|mcp|80%' .claude/` returns nothing (or only harmless prose — list it).
+- [x] No other files changed.
+
+## Log
+- 2026-11-01: Added CLAUDE.md (Karpathy verbatim + 15-line Project rules), verbatim SKILL.md, 4 ECC agents (upstream b38be6a; `model:` dropped).
+- Trimmed: Django/FastAPI/Flask checks, ECC skill references, `pytest --cov`, npm/npx tooling, web-only security patterns; JS examples swapped for Python.
+- Verified: acceptance grep exits 1 with no output; `git show --stat HEAD` lists only the 6 files + this task file.
+- Lead review: accepted; softened python-reviewer description ("MUST BE USED…" → on-demand) so it does not auto-trigger on every Python edit.

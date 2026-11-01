@@ -1,4 +1,4 @@
-# Progress: 8%  [#...................]  (6/75 points)
+# Progress: 9%  [#...................]  (7/75 points)
 
 in_progress counts half. Regenerate with `python3 backlog/progress.py`.
 
@@ -6,7 +6,7 @@ in_progress counts half. Regenerate with `python3 backlog/progress.py`.
 |---|---|---|---|---|---|
 | T01 | Purge secrets and PII from git history | 0-safety | 3 | done | agent |
 | T02 | Repo hygiene — delete stale duplicates, dumps, junk | 1-foundation | 3 | done | agent |
-| T03 | Add Karpathy guidelines + ECC review agents | 1-foundation | 1 | todo | agent |
+| T03 | Add Karpathy guidelines + ECC review agents | 1-foundation | 1 | done | agent |
 | T04 | Test harness + CI (pytest, hassfest, HACS) | 1-foundation | 3 | todo | agent |
 | T05 | aiohttp Cognito auth with MFA + refresh token (drop boto3) | 2-client | 5 | todo | agent |
 | T06 | FluidraApi — REST + WebSocket client (the local-ready seam) | 2-client | 3 | todo | agent |
