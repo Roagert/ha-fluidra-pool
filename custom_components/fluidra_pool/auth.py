@@ -103,6 +103,10 @@ class FluidraAuth:
                 raise FluidraAuthError("Refresh token rejected and the account requires MFA")
             return await self.async_login()
 
+    def invalidate_access_token(self) -> None:
+        """Drop the cached access token (the API rejected it); the refresh token stays."""
+        self._access_token = None
+
     async def _authenticate(self, action: str, payload: dict[str, Any]) -> str:
         """Run one Cognito auth call and store the tokens it returns."""
         data = await self._post(action, payload)

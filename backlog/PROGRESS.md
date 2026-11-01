@@ -1,4 +1,4 @@
-# Progress: 24%  [####................]  (18/75 points)
+# Progress: 28%  [#####...............]  (21/75 points)
 
 in_progress counts half. Regenerate with `python3 backlog/progress.py`.
 
@@ -9,7 +9,7 @@ in_progress counts half. Regenerate with `python3 backlog/progress.py`.
 | T03 | Add Karpathy guidelines + ECC review agents | 1-foundation | 1 | done | agent |
 | T04 | Test harness + CI (pytest, hassfest, HACS) | 1-foundation | 3 | done | agent |
 | T05 | aiohttp Cognito auth with MFA + refresh token (drop boto3) | 2-client | 5 | done | agent |
-| T06 | FluidraApi — REST + WebSocket client (the local-ready seam) | 2-client | 3 | todo | agent |
+| T06 | FluidraApi — REST + WebSocket client (the local-ready seam) | 2-client | 3 | done | agent |
 | T07 | Rewrite coordinator (1,140 → ~200 lines), fix startup block #9 | 3-core | 8 | todo | agent |
 | T08 | Config flow — MFA, reauth, compatible unique_id, translations | 3-core | 5 | todo | agent |
 | T09 | Redacted diagnostics download; remove dump_api_data service | 3-core | 2 | todo | agent |
