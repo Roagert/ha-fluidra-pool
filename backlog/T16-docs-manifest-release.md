@@ -3,7 +3,7 @@ id: T16
 title: Manifest, README, PROTOCOL, PRD v3, CHANGELOG
 phase: 6-release
 points: 3
-status: in_progress
+status: done
 depends_on: [T12]
 owner: agent
 ---
@@ -30,7 +30,7 @@ features that no longer exist.
 - Delete `scripts/ghidra_*.py` (RE tooling; belongs in `Roagert/fluidra-re`) and stale `docs/AUTONOMOUS_ENGINEER_FLOW.md` and `custom_components/fluidra_pool/icon.svg|logo.png` if HACS brand assets are handled via `brands` repo — else keep (decide, note why).
 
 ## Acceptance criteria
-- [ ] CI hassfest + HACS jobs pass (run locally via `docker run` if available, else note).
+- [x] CI hassfest + HACS jobs pass (run locally via `docker run` if available, else note).
 - [x] `grep -rn "192.168.1.11\|Authorization: Bearer.*ws\|USER_SRP" *.md docs/` → nothing stale.
 - [x] No PII (email, name, pool id) in any doc.
 - [x] `grep -rn '^<<<<<<<\|^>>>>>>>' .` → nothing.
@@ -41,3 +41,4 @@ features that no longer exist.
 - Deleted: PROTOCOL_FINDINGS.md (merged), scripts/ghidra_*.py, docs/AUTONOMOUS_ENGINEER_FLOW.md, docs/usage.md + troubleshooting.md (README covers it in less text), icon.svg/logo.png (HA never reads them; the brand comes from the brands repo; HA 2026.3 local brands would need `brand/*.png`). References fixed: 3 code comments + docs/RE-libapp.md → PROTOCOL.md.
 - PROTOCOL.md: dropped device id/serials, LAN IP, redacted markers, boto3/nmap/curl snippets, task tables; live mode table; WS token in query; Cognito MFA/refresh. CHANGELOG from T05–T12 logs, plus `climate_heatpump` on non-heat-pumps (1.x created it for the configured device of any type).
 - Not touched: docs/LOCAL_CAPTURE.md still holds home LAN IPs and the pump MAC (U02 runbook; outside the PII criterion) — redact after U02. 138 passed.
+- Lead review: accepted; CI on 77c9628: pytest, hassfest, HACS all green.
