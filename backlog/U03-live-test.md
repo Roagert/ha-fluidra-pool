@@ -12,8 +12,9 @@ owner: user
 2. Check: HA starts in normal time; climate shows the right mode; HEAT/COOL/AUTO/OFF and
    setpoint work from HA and appear in the Fluidra app within ~5 s; app changes show in HA within ~5 s (WebSocket);
    unplug internet → entities go unavailable, come back after.
-3. Download diagnostics and confirm no secrets in it.
-4. Approve merge + tag `v2.0.0`.
+3. If your account has MFA: add the integration, enter a **wrong** code once, then the right one — it must succeed (if it fails, report it: the flow then needs a fresh login per retry).
+4. Download diagnostics and confirm no secrets in it.
+5. Approve merge + tag `v2.0.0`.
 
 ## Acceptance criteria
 - [ ] Thomas confirms all checks; release tagged.

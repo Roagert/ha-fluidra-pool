@@ -9,8 +9,7 @@ CONF_USERNAME = "username"
 CONF_PASSWORD = "password"
 CONF_DEVICE_ID = "device_id"
 CONF_COMPONENT_ID = "component_id"
-CONF_UPDATE_INTERVAL = "update_interval"
-CONF_API_RATE_LIMIT = "api_rate_limit"
+CONF_REFRESH_TOKEN = "refresh_token"
 
 # API Configuration
 API_BASE_URL = "https://api.fluidra-emea.com"
@@ -27,20 +26,12 @@ COGNITO_REGION = "eu-west-1"
 COGNITO_POOL_ID = "eu-west-1_OnopMZF9X"  # Verified from token
 COGNITO_CLIENT_ID = "g3njunelkcbtefosqm9bdhhq1"  # Verified from token
 
-# Update intervals and rate limiting
-DEFAULT_SCAN_INTERVAL = timedelta(minutes=15)  # 15 minutes default (better for pool monitoring)
-MIN_SCAN_INTERVAL = timedelta(minutes=2)  # Minimum 2 minutes (faster response)
-MAX_SCAN_INTERVAL = timedelta(hours=2)  # Maximum 2 hours
+# Update intervals
 QUICK_UPDATE_INTERVAL = timedelta(seconds=1)  # 1 second after control commands (immediate feedback)
 TOKEN_REFRESH_THRESHOLD = timedelta(minutes=10)
 
 # WebSocket configuration
 WS_URL = "wss://ws.fluidra-emea.com"
-
-# API Rate Limiting
-DEFAULT_API_RATE_LIMIT = 60  # requests per minute
-MIN_API_RATE_LIMIT = 10  # minimum requests per minute
-MAX_API_RATE_LIMIT = 120  # maximum requests per minute
 
 # Error codes for better error handling
 ERROR_CODES = {

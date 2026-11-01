@@ -56,6 +56,7 @@ def config_entry(hass) -> MockConfigEntry:
     """A config entry for the fake account, added to hass but not set up."""
     entry = MockConfigEntry(
         domain=DOMAIN,
+        version=2,
         unique_id="fluidra_pool_test-user",
         data={"username": "test-user", "password": "test-password"},
     )

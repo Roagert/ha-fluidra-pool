@@ -3,7 +3,7 @@ from datetime import timedelta
 from unittest.mock import patch
 
 from aioresponses import aioresponses
-from homeassistant.config_entries import ConfigEntry, ConfigEntryState
+from homeassistant.config_entries import SOURCE_REAUTH, ConfigEntryState
 from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
@@ -48,14 +48,16 @@ async def test_cloud_down_at_boot_retries(hass: HomeAssistant, config_entry, cog
 
 
 async def test_bad_credentials_start_reauth(hass: HomeAssistant, config_entry) -> None:
-    with (
-        aioresponses() as mock,
-        patch.object(ConfigEntry, "async_start_reauth") as start_reauth,
-    ):
+    with aioresponses() as mock:
         mock.post(COGNITO_URL, status=400, payload={"__type": "NotAuthorizedException"})
         assert not await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
     assert config_entry.state is ConfigEntryState.SETUP_ERROR
-    start_reauth.assert_called_once_with(hass)
+    flows = hass.config_entries.flow.async_progress()
+    assert [(flow["context"]["source"], flow["step_id"]) for flow in flows] == [
+        (SOURCE_REAUTH, "reauth_confirm")
+    ]
+    assert flows[0]["context"]["entry_id"] == config_entry.entry_id
 
 
 async def test_poll_failure_makes_entities_unavailable(
