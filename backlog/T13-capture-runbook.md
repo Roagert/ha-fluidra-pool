@@ -3,7 +3,7 @@ id: T13
 title: AP packet-capture runbook + pcap analyzer
 phase: 5-local
 points: 3
-status: todo
+status: done
 depends_on: [T02]
 owner: agent
 ---
@@ -31,6 +31,13 @@ branch `origin/feat/fluidra-local-cli`): `docs/unifi-network-capture-notes.md`,
 - Test with a tiny synthetic pcap generated in the test.
 
 ## Acceptance criteria
-- [ ] `python3 scripts/analyze_capture.py tests/fixtures/sample.pcap` prints the tables; tests cover pcap + pcapng, DNS, SNI, LAN-flag.
-- [ ] Runbook commands are copy-paste ready; nothing in it requires installing software on the AP.
-- [ ] No payload bytes printed unless `--payload` is given.
+- [x] `python3 scripts/analyze_capture.py tests/fixtures/sample.pcap` prints the tables; tests cover pcap + pcapng, DNS, SNI, LAN-flag.
+- [x] Runbook commands are copy-paste ready; nothing in it requires installing software on the AP.
+- [x] No payload bytes printed unless `--payload` is given.
+
+## Log
+- `scripts/analyze_capture.py` (199 lines, stdlib): pcap LE/BE µs/ns + pcapng (SHB/IDB/EPB, if_tsresol), Ethernet/SLL/SLL2, IPv4, DNS+mDNS, SNI; flags come from the peer table; DNS/DHCP (ports 53/67/68) are listed but never flagged, so router DNS doesn't trip the LAN flag.
+- `tests/test_analyze_capture.py` (9 tests, synthetic builders); `tests/fixtures/sample.pcap` = `sample_pcap()` output (RFC 5737/private IPs), force-added because `.gitignore` has `*.pcap*`. Cross-checked with scapy; SNI also checked against a real OpenSSL 3.5 ClientHello; 7 mutations of the script each fail a test.
+- `docs/LOCAL_CAPTURE.md`: commands pass `bash -n` and use only `which`/`date`/`tcpdump` on the AP; not run against the real AP (no access here). U02 is the field test.
+- Full suite: 10 passed.
+- Lead review: accepted; runbook is copy-paste ready. Field-tested only by U02.
