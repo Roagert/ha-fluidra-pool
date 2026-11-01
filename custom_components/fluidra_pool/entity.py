@@ -7,7 +7,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN
 from .coordinator import HEAT_PUMP_COMPONENTS, FluidraPoolDataUpdateCoordinator
 
-# Identity components of the amt heat pump (PROTOCOL_FINDINGS.md); unverified on other devices.
+# Identity components of the amt heat pump (PROTOCOL.md); unverified on other devices.
 SERIAL, FIRMWARE, SKU = 3, 4, 6
 
 

@@ -5,15 +5,13 @@
     "@roagert"
   ],
   "config_flow": true,
-  "dependencies": [],
   "documentation": "https://github.com/Roagert/ha-fluidra-pool",
-  "homekit": {},
-  "integration_type": "device",
-  "iot_class": "cloud_polling",
+  "integration_type": "hub",
+  "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/Roagert/ha-fluidra-pool/issues",
-  "quality_scale": "platinum",
+  "loggers": [
+    "custom_components.fluidra_pool"
+  ],
   "requirements": [],
-  "ssdp": [],
-  "version": "1.0.0",
-  "zeroconf": []
+  "version": "2.0.0"
 }

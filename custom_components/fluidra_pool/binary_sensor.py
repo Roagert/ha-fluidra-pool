@@ -8,7 +8,7 @@ from .coordinator import FluidraPoolDataUpdateCoordinator
 from .entity import FluidraEntity, heat_pumps
 
 # 0 flow OK, else no-flow error: per ha-fluidra-local's README ("verified components");
-# not in this repo's PROTOCOL_FINDINGS.md, so UNVERIFIED here.
+# not confirmed in this repo's PROTOCOL.md, so UNVERIFIED here.
 NO_FLOW = 28
 
 

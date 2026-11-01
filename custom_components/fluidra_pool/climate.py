@@ -91,7 +91,7 @@ class FluidraHeatPump(FluidraEntity, ClimateEntity):
         """Off, idle, heating or cooling; None while component 11 is not reported."""
         if self._value(POWER) == 0:
             return HVACAction.OFF
-        # Component 11 = 0 idle / 1 running: UNVERIFIED reading of PROTOCOL_FINDINGS.md.
+        # Component 11 = 0 idle / 1 running: UNVERIFIED reading of PROTOCOL.md.
         if (running := self._value(RUNNING)) is None:
             return None
         if running == 0:

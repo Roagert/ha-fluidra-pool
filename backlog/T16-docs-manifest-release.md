@@ -3,7 +3,7 @@ id: T16
 title: Manifest, README, PROTOCOL, PRD v3, CHANGELOG
 phase: 6-release
 points: 3
-status: todo
+status: in_progress
 depends_on: [T12]
 owner: agent
 ---
@@ -31,6 +31,13 @@ features that no longer exist.
 
 ## Acceptance criteria
 - [ ] CI hassfest + HACS jobs pass (run locally via `docker run` if available, else note).
-- [ ] `grep -rn "192.168.1.11\|Authorization: Bearer.*ws\|USER_SRP" *.md docs/` → nothing stale.
-- [ ] No PII (email, name, pool id) in any doc.
-- [ ] `grep -rn '^<<<<<<<\|^>>>>>>>' .` → nothing.
+- [x] `grep -rn "192.168.1.11\|Authorization: Bearer.*ws\|USER_SRP" *.md docs/` → nothing stale.
+- [x] No PII (email, name, pool id) in any doc.
+- [x] `grep -rn '^<<<<<<<\|^>>>>>>>' .` → nothing.
+
+## Log
+- HA minimum **2025.3.0**, not 2025.2.0: HA core source at release tags (raw.githubusercontent) has no `AddConfigEntryEntitiesCallback` in `entity_platform.py` at 2025.2.5, defines it at 2025.3.0; `DeviceInfo.model_id` from 2024.8, `_get_reauth_entry` and `DataUpdateCoordinator(config_entry=)` from 2024.11, `runtime_data`/`async_create_background_task`/`async_update_reload_and_abort(data=)` older. Dev blog not reachable (host blocked).
+- CI box open: hassfest/HACS not run (no docker daemon). Instead read hassfest `manifest.py`/`util.py` @2026.2.3 (schema + sort rule, order checked by script) and HACS validators: brands passes via `home-assistant/brands` `custom_integrations/fluidra_pool/icon.png`; `images` check is plugin/theme only. Dropped `dependencies: []` too.
+- Deleted: PROTOCOL_FINDINGS.md (merged), scripts/ghidra_*.py, docs/AUTONOMOUS_ENGINEER_FLOW.md, docs/usage.md + troubleshooting.md (README covers it in less text), icon.svg/logo.png (HA never reads them; the brand comes from the brands repo; HA 2026.3 local brands would need `brand/*.png`). References fixed: 3 code comments + docs/RE-libapp.md → PROTOCOL.md.
+- PROTOCOL.md: dropped device id/serials, LAN IP, redacted markers, boto3/nmap/curl snippets, task tables; live mode table; WS token in query; Cognito MFA/refresh. CHANGELOG from T05–T12 logs, plus `climate_heatpump` on non-heat-pumps (1.x created it for the configured device of any type).
+- Not touched: docs/LOCAL_CAPTURE.md still holds home LAN IPs and the pump MAC (U02 runbook; outside the PII criterion) — redact after U02. 138 passed.

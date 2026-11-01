@@ -1,156 +1,59 @@
-# Product Requirements Document — ha-fluidra-pool
-**Version:** 2.0 | **Date:** 2026-03-30 | **Status:** Active
+# PRD — ha-fluidra-pool
 
----
+**Version 3.0** · 2026-11-01 · Release 2.0.0 · Supersedes v2.0 (which assumed local UDP for the heat pump)
 
-## 1. Objective
+## Goal
 
-Build a production-quality Home Assistant custom integration for Fluidra iQBridge pool heat pump controllers that operates **primarily via local LAN** (zero cloud dependency for command/status), with cloud WebSocket as fallback and cloud REST as last resort — while also documenting the full reverse-engineered protocol for open-source community use.
+One simple, correct Home Assistant integration (`fluidra_pool`) for Fluidra connected
+devices, heat pump first. **Local-ready**: cloud REST + WebSocket push today, behind one
+small client (`FluidraApi`) that a proven local transport can replace without touching
+entities.
 
----
+## Users and devices
 
-## 2. Scope
+Owners of a Fluidra cloud account (EMEA). Tested: Amitime inverter heat pump (`amt`).
+Other devices (#3 #4 #5 #8) must set up without errors and never show guessed values; they
+get proper entities only once owners send diagnostics.
 
-### In Scope
-- Local UDP client (direct LAN control, <100 ms latency)
-- Cloud WebSocket client (real-time push, <2 s latency)
-- Cloud REST polling fallback (15-min interval)
-- HA climate entity (heat/cool/auto/off + Smart Auto preset)
-- HA sensor entities: water temp, setpoint, mode, power, error, pH, ORP, salinity, chlorine
-- HA button entities: manual refresh
-- Config flow with connection mode selection
-- Full reverse-engineering documentation (PROTOCOL.md, PROTOCOL_FINDINGS.md)
-- Security research findings
+## Requirements (2.0.0)
 
-### Out of Scope
-- Custom iQBridge firmware (long-term FW-001/002/003, not this PRD cycle)
-- MQTT bridge (FEAT-003, future)
-- Mobile app replacement
-- BLE direct control (requires iQBridge RS physical proximity)
-- Support for non-EMEA Fluidra regions
+1. **Login**: e-mail + password, MFA code when Cognito asks, reauth when the login is
+   rejected. Plain aiohttp (no boto3); refresh token stored; network errors retry and never
+   force a reauth.
+2. **Data**: all devices, REST poll every 5 min + WebSocket push; never blocks HA startup (#9).
+3. **Heat pump**: climate (off/heat/cool/auto × smart/boost/silence, 15–40 °C, hvac_action),
+   power switch, water/air/target temperature, Wi-Fi signal, no-flow sensor.
+4. **Every device**: error information; others: component count + raw component sensors.
+5. **Diagnostics** download with secrets and home-network identity redacted.
+6. **Compatibility**: domain, entry unique id `fluidra_pool_<username>`, device identifiers
+   and the unique ids of climate / water temperature / error information unchanged; every
+   removed entity listed in `CHANGELOG.md`.
 
----
+Non-goals: options, services, guessed mappings, BLE, non-EMEA clouds, custom firmware,
+MQTT bridge.
 
-## 3. Stakeholders
+## Constraints (established facts)
 
-| Role | Responsibility |
-|------|---------------|
-| @Roagert | Device owner, integration maintainer |
-| HA Community | End users of the integration |
-| Cipher (RE agent) | Protocol reverse engineering |
+- Access token lives about 300 s → refresh 30 s before expiry, never a password login per call.
+- WebSocket auth is the token in the query string; push format is unverified.
+- UI config returns HTTP 500 for some devices → optional.
+- The `amt` pump talks to AWS IoT only: no `commandAndControl.localUdp`, no open LAN ports,
+  no UDP replies, no SSDP, no BLE advert. Protocol: `PROTOCOL.md`.
 
----
+## Local control (gated)
 
-## 4. Functional Requirements
+Research by access-point packet capture only (`docs/LOCAL_CAPTURE.md`). Decision record
+`docs/LOCAL_DECISION.md` (T14): if the phone talks to the pump on the LAN during a setpoint
+change, implement that transport behind `FluidraApi` (T15); otherwise stay cloud-push.
+`local_client.py` (iQBridge RS UDP hypothesis) stays unwired.
 
-### FR-01: Local UDP Control
-**Description:** When iQBridge RS is on the same LAN, use local UDP for all commands and status reads. Zero internet traffic for device control.
-**Acceptance Criteria:**
-- [ ] Coordinator detects `commandAndControl.localUdp` from cloud API on startup
-- [ ] UDP client sends correctly formatted packets to iQBridge
-- [ ] Commands execute in < 500 ms
-- [ ] Falls back to WebSocket if UDP unavailable
+## Success criteria
 
-### FR-02: WebSocket Real-Time Updates
-**Description:** Maintain persistent WebSocket connection to `wss://ws.fluidra-emea.com` for push state updates.
-**Acceptance Criteria:**
-- [x] WS connects on coordinator start *(implemented 2026-03-29)*
-- [x] Subscribes to all device IDs on connect
-- [x] WS events update coordinator state immediately
-- [x] Auto-reconnects with exponential backoff
+- Live test on the maintainer's HA (U03): setup incl. MFA, values match the app, commands
+  apply, pushes arrive, restart without reauth.
+- CI green (pytest, hassfest, HACS). Issues #1 #2 #9 fixed.
 
-### FR-03: Climate Entity
-**Description:** HA climate entity with correct mode mapping.
-**Acceptance Criteria:**
-- [x] Smart Auto shows as `HVACMode.AUTO` *(fixed 2026-03-29)*
-- [x] Setting `hvac_mode=auto` activates Smart Auto (component 14=2)
-- [ ] `hvac_action` shows heating/cooling/idle correctly
-- [ ] Setpoint changes via `set_temperature` service
+## Open questions
 
-### FR-04: Sensor Entities
-**Acceptance Criteria:**
-- [x] Water temperature (component 19, °C) *(added 2026-03-29)*
-- [x] pH, ORP, salinity, free chlorine (chlorinator) *(added 2026-03-29)*
-- [ ] Diagnostic error sensor shows error code + message (BUG-003)
-- [ ] All sensors update within 2 s via WebSocket
-
-### FR-05: Config Flow
-**Description:** User-facing setup with connection mode selection.
-**Acceptance Criteria:**
-- [ ] `connection_mode`: auto / cloud_only / local_only
-- [ ] Existing cloud-only users unaffected by default (`auto`)
-- [ ] Validates credentials on setup
-
----
-
-## 5. Non-Functional Requirements
-
-| NFR | Requirement | Measure |
-|-----|------------|---------|
-| Latency | Local mode command latency | < 500 ms |
-| Latency | WebSocket state update | < 2 s |
-| Reliability | Auto-reconnect WS after failure | Within 30 s |
-| Security | Local UDP token not hardcoded | Derived per-device |
-| Compatibility | HA version | 2024.1+ |
-| API Rate Limit | Cloud REST calls | ≤ 60/min |
-
----
-
-## 6. Technical Architecture
-
-- **Language:** Python 3.11+
-- **HA Framework:** DataUpdateCoordinator pattern
-- **Auth:** AWS Cognito USER_PASSWORD_AUTH (eu-west-1)
-- **Cloud transport:** aiohttp (REST + WebSocket)
-- **Local transport:** asyncio DatagramProtocol (UDP)
-- **Config:** config_flow.py → HA config entries
-
-```
-HA Core
-  └─ FluidraCoordinator
-       ├─ [primary]  LocalUDPClient ──► iQBridge LAN
-       ├─ [fallback] CloudWSClient  ──► wss://ws.fluidra-emea.com
-       └─ [poll]     CloudRESTClient ──► api.fluidra-emea.com
-```
-
----
-
-## 7. Constraints & Assumptions
-
-- iQBridge RS required for local UDP (iQBridge ZB uses Zigbee, different path)
-- `commandAndControl.localUdp` field must be present in API response for local mode
-- UDP packet format is hypothesis until live traffic capture confirms it
-- Cognito tokens expire after 1 hour; refresh token valid 30 days
-
----
-
-## 8. Risks & Mitigations
-
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|-----------|
-| UDP packet format wrong (hypothesis) | Medium | HIGH | `fluidra_debug.py --ws` live capture; tcpdump |
-| Fluidra changes cloud API | Low | HIGH | WebSocket fallback always maintained |
-| Cognito token rate limiting | Low | MEDIUM | Token refresh only when < 10 min to expiry |
-| UDP auth token prediction (security) | Medium | HIGH | Report via responsible disclosure |
-| iQBridge firmware update breaks local mode | Low | MEDIUM | Cloud fallback always maintained |
-
----
-
-## 9. Success Criteria
-
-- [ ] Local UDP: command round-trip < 500 ms on LAN
-- [ ] WebSocket: state update < 2 s after pool event
-- [ ] All sensors show correct values matching Fluidra app
-- [ ] Integration survives HA restart without re-authentication
-- [ ] Zero cloud calls for device control in local mode
-- [ ] Protocol documented such that a new developer can implement a client from scratch
-
----
-
-## 10. Open Questions
-
-- UDP packet format: magic bytes, checksum type, auth placement — needs `tcpdump` capture
-- UDP port: hypothesis 9003, unconfirmed
-- UDP auth token: hypothesis HMAC-SHA256(serial, "fluidra"), unconfirmed
-- Component IDs 137, 185, 272, 276: hypothesis backwash/ORP/pH/chlorination, needs uiconfig verification
-- iQBridge ZB local control: Zigbee path entirely separate — out of scope for now
+WebSocket push format; meaning of components 11 (running) and 28 (no flow); 42 °C maximum
+via UI config; format of the cloud's `alarms` list; component maps of other devices.
