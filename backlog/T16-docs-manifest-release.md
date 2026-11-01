@@ -25,9 +25,11 @@ features that no longer exist.
 - Merge `PROTOCOL_FINDINGS.md` into `PROTOCOL.md` (one protocol doc, no PII), fix WS auth/IP.
 - `docs/PRD.md` v3 reflecting decisions in `backlog/README.md`.
 - `CHANGELOG.md` 2.0.0: breaking changes (removed entities from T11 log, options removed), fixes (#1 #2 #9), new (MFA, reauth, diagnostics, switch, binary sensor).
-- Delete stale `docs/AUTONOMOUS_ENGINEER_FLOW.md` and `custom_components/fluidra_pool/icon.svg|logo.png` if HACS brand assets are handled via `brands` repo — else keep (decide, note why).
+- Root `README.md` contains unresolved merge-conflict markers (lines 1/68/305) — the rewrite replaces it.
+- Delete `scripts/ghidra_*.py` (RE tooling; belongs in `Roagert/fluidra-re`) and stale `docs/AUTONOMOUS_ENGINEER_FLOW.md` and `custom_components/fluidra_pool/icon.svg|logo.png` if HACS brand assets are handled via `brands` repo — else keep (decide, note why).
 
 ## Acceptance criteria
 - [ ] CI hassfest + HACS jobs pass (run locally via `docker run` if available, else note).
 - [ ] `grep -rn "192.168.1.11\|Authorization: Bearer.*ws\|USER_SRP" *.md docs/` → nothing stale.
 - [ ] No PII (email, name, pool id) in any doc.
+- [ ] `grep -rn '^<<<<<<<\|^>>>>>>>' .` → nothing.
