@@ -1,6 +1,6 @@
 ---
 id: U02
-title: Run the 3-minute AP capture
+title: Run the ~10-minute AP capture (incl. pump power-cycle)
 phase: 5-local
 points: 2
 status: todo
