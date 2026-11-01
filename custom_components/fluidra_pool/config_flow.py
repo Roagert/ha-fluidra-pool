@@ -8,6 +8,7 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import (
     DOMAIN, 
@@ -24,7 +25,7 @@ from .const import (
     MIN_API_RATE_LIMIT,
     MAX_API_RATE_LIMIT,
 )
-from .auth import FluidraAuth
+from .auth import FluidraAuth, MfaRequired
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -48,8 +49,12 @@ class FluidraPoolConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             try:
                 # Test authentication
-                auth = FluidraAuth(user_input[CONF_USERNAME], user_input[CONF_PASSWORD])
-                if await auth.refresh_token_if_needed():
+                auth = FluidraAuth(
+                    async_get_clientsession(self.hass),
+                    user_input[CONF_USERNAME],
+                    user_input[CONF_PASSWORD],
+                )
+                if await auth.async_login():
                     self._username = user_input[CONF_USERNAME]
                     self._password = user_input[CONF_PASSWORD]
                     
@@ -74,6 +79,8 @@ class FluidraPoolConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     )
                 else:
                     errors["base"] = "invalid_auth"
+            except MfaRequired:
+                errors["base"] = "mfa_required"  # T08 adds the MFA step
             except Exception as err:
                 _LOGGER.error("Authentication error: %s", err)
                 errors["base"] = "invalid_auth"

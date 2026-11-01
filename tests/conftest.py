@@ -1,13 +1,11 @@
 """Shared fixtures for Fluidra Pool tests. Fake ids and credentials only."""
 import json
-from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 from aioresponses import aioresponses
 
-from custom_components.fluidra_pool.auth import FluidraAuth
+from custom_components.fluidra_pool.auth import COGNITO_URL
 from custom_components.fluidra_pool.const import (
     API_CONSUMER_URL,
     API_DEVICES_URL,
@@ -44,22 +42,20 @@ def auto_enable_custom_integrations(enable_custom_integrations):
 
 
 @pytest.fixture
-def mock_auth():
-    """Bypass Cognito: authenticate() just stores a fake token."""
-
-    async def _authenticate(self):
-        self.access_token = "test-access-token"
-        self.token_expiry = datetime.now() + timedelta(hours=1)
-        return True
-
-    with patch.object(FluidraAuth, "authenticate", _authenticate):
-        yield
-
-
-@pytest.fixture
-def mock_api(mock_auth):
-    """Canned Fluidra REST responses for one heat pump (DEVICE_ID)."""
+def mock_api():
+    """Canned Cognito login + Fluidra REST responses for one heat pump (DEVICE_ID)."""
     with aioresponses() as mock:
+        mock.post(
+            COGNITO_URL,
+            payload={
+                "AuthenticationResult": {
+                    "AccessToken": "test-access-token",
+                    "ExpiresIn": 3600,
+                    "RefreshToken": "test-refresh-token",
+                }
+            },
+            repeat=True,
+        )
         mock.get(API_DEVICES_URL, payload=DEVICES, repeat=True)
         mock.get(
             API_ENDPOINT_DEVICE_COMPONENTS.format(device_id=DEVICE_ID),

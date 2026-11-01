@@ -12,10 +12,7 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/Roagert/ha-fluidra-pool/issues",
   "quality_scale": "platinum",
-  "requirements": [
-    "boto3>=1.26.0",
-    "pycognito>=2023.5.0"
-  ],
+  "requirements": [],
   "ssdp": [],
   "version": "1.0.0",
   "zeroconf": []

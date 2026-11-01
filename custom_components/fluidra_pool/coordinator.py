@@ -8,6 +8,7 @@ import aiohttp
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 import json
 
@@ -36,7 +37,7 @@ from .const import (
     WS_RECONNECT_DELAY,
     WS_MAX_RECONNECT_ATTEMPTS,
 )
-from .auth import FluidraAuth
+from .auth import FluidraAuth, FluidraAuthError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -86,7 +87,7 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
         )
         
         self.session = aiohttp.ClientSession()
-        self.auth = FluidraAuth(username, password, self.session)
+        self.auth = FluidraAuth(async_get_clientsession(hass), username, password)
         self.devices: Dict[str, Any] = {}
         self.consumer_data: Dict[str, Any] = {}
         self.user_profile_data: Dict[str, Any] = {}
@@ -125,6 +126,18 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
         await self.session.close()
         await super().async_shutdown()
 
+    async def _auth_headers(self) -> Dict[str, str]:
+        """REST headers with a valid bearer token (moved from the old auth.py; T06 replaces)."""
+        token = await self.auth.async_get_access_token()
+        return {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "x-api-key": token,
+            "x-access-token": token,
+            "User-Agent": "Fluidra/1.0",
+        }
+
     # ── WebSocket real-time updates ───────────────────────────────────────────
 
     def _start_websocket(self) -> None:
@@ -139,8 +152,7 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
         attempts = 0
         while self._ws_running and attempts < WS_MAX_RECONNECT_ATTEMPTS:
             try:
-                await self.auth.authenticate()
-                token = self.auth.access_token
+                token = await self.auth.async_get_access_token()
                 if not token:
                     _LOGGER.warning("WebSocket: no auth token, retrying in %ds", WS_RECONNECT_DELAY)
                     await asyncio.sleep(WS_RECONNECT_DELAY)
@@ -296,8 +308,10 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
         
         try:
             # Ensure we're authenticated before making any API calls
-            if not await self.auth.authenticate():
-                raise ConfigEntryAuthFailed("Failed to authenticate with Fluidra API")
+            try:
+                await self.auth.async_get_access_token()
+            except FluidraAuthError as err:
+                raise ConfigEntryAuthFailed("Failed to authenticate with Fluidra API") from err
 
             # Track successful fetches - don't fail completely if some endpoints fail
             fetch_results = {}
@@ -382,12 +396,12 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
                 return
             
             # Ensure authentication
-            if not await self.auth.refresh_token_if_needed():
+            if not await self.auth.async_get_access_token():
                 _LOGGER.error("Authentication failed for consumer data request")
                 return
             
             _LOGGER.debug("Fetching consumer data from %s", API_CONSUMER_URL)
-            headers = self.auth.get_auth_headers()
+            headers = await self._auth_headers()
             _LOGGER.debug("Request headers (masked): %s", {k: '****' if k in ['Authorization', 'x-api-key', 'x-access-token'] else v for k, v in headers.items()})
             
             # Record API call
@@ -423,12 +437,12 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
                 return
             
             # Ensure authentication
-            if not await self.auth.refresh_token_if_needed():
+            if not await self.auth.async_get_access_token():
                 _LOGGER.error("Authentication failed for devices data request")
                 return
             
             _LOGGER.debug("Fetching devices data from %s", API_DEVICES_URL)
-            headers = self.auth.get_auth_headers()
+            headers = await self._auth_headers()
             
             # Record API call
             self._record_api_call()
@@ -617,11 +631,11 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
                 _LOGGER.warning("Rate limit exceeded for component data request")
                 return None
             
-            if not await self.auth.refresh_token_if_needed():
+            if not await self.auth.async_get_access_token():
                 return None
             
             url = f"{API_DEVICES_URL}/{device_id}/components/{component_id}"
-            headers = self.auth.get_auth_headers()
+            headers = await self._auth_headers()
             
             # Record API call
             self._record_api_call()
@@ -738,7 +752,7 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
                 _LOGGER.warning("Rate limit exceeded for user profile data request")
                 return
             
-            headers = self.auth.get_auth_headers()
+            headers = await self._auth_headers()
             
             # Record API call
             self._record_api_call()
@@ -758,7 +772,7 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
         """Fetch pool status data from Fluidra API."""
         try:
             url = API_ENDPOINT_POOL_STATUS.format(pool_id=pool_id)
-            headers = self.auth.get_auth_headers()
+            headers = await self._auth_headers()
             
             # Record API call
             self._record_api_call()
@@ -780,7 +794,7 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
     async def _fetch_user_pools_data(self) -> None:
         """Fetch user pools data from Fluidra API."""
         try:
-            headers = self.auth.get_auth_headers()
+            headers = await self._auth_headers()
             
             # Record API call
             self._record_api_call()
@@ -844,7 +858,7 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
         """Fetch device components data from Fluidra API."""
         try:
             url = API_ENDPOINT_DEVICE_COMPONENTS.format(device_id=device_id)
-            headers = self.auth.get_auth_headers()
+            headers = await self._auth_headers()
             
             _LOGGER.info("Fetching device components from URL: %s", url)
             _LOGGER.debug("Headers: %s", headers)
@@ -933,7 +947,7 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
         """Fetch device UI configuration data from Fluidra API."""
         try:
             url = API_ENDPOINT_DEVICE_UICONFIG.format(device_id=device_id)
-            headers = self.auth.get_auth_headers()
+            headers = await self._auth_headers()
             
             # Record API call
             self._record_api_call()
@@ -984,7 +998,7 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
             if not self._check_rate_limit():
                 _LOGGER.warning("API call skipped due to rate limiting.")
                 return False
-            if not await self.auth.refresh_token_if_needed():
+            if not await self.auth.async_get_access_token():
                 _LOGGER.error("Authentication failed for component value set.")
                 return False
             if self.device_components_data and device_id in self.device_components_data:
@@ -997,7 +1011,7 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
                         device_id=device_id,
                         component_id=component_id
                     )
-                    headers = self.auth.get_auth_headers()
+                    headers = await self._auth_headers()
                     headers['Content-Type'] = 'application/json; charset=utf-8'
                     _LOGGER.info("[Fluidra Debug] Setting component %s value to %s via PUT to %s with payload: %s", 
                                component_id, value, url, payload)
@@ -1029,7 +1043,7 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
             if not self._check_rate_limit():
                 _LOGGER.warning("API call skipped due to rate limiting.")
                 return False
-            if not await self.auth.refresh_token_if_needed():
+            if not await self.auth.async_get_access_token():
                 _LOGGER.error("Authentication failed for temperature value set.")
                 return False
             if self.device_components_data and device_id:
@@ -1043,7 +1057,7 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
                         device_id=device_id,
                         component_id=actual_component_id
                     )
-                    headers = self.auth.get_auth_headers()
+                    headers = await self._auth_headers()
                     headers['Content-Type'] = 'application/json; charset=utf-8'
                     _LOGGER.info("[Fluidra Debug] Setting temperature value via PUT to %s with payload: %s", url, payload)
                     self._record_api_call()
@@ -1073,7 +1087,7 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
             if not self._check_rate_limit():
                 _LOGGER.warning("API call skipped due to rate limiting.")
                 return False
-            if not await self.auth.refresh_token_if_needed():
+            if not await self.auth.async_get_access_token():
                 _LOGGER.error("Authentication failed for power value set.")
                 return False
             # Get the component data to find the component ID
@@ -1088,7 +1102,7 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator):
                         device_id=device_id,
                         component_id=actual_component_id
                     )
-                    headers = self.auth.get_auth_headers()
+                    headers = await self._auth_headers()
                     headers['Content-Type'] = 'application/json; charset=utf-8'
                     _LOGGER.info("[Fluidra Debug] Setting power value via PUT to %s with payload: %s", url, payload)
                     self._record_api_call()

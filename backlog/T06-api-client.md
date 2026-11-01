@@ -24,6 +24,9 @@ New `api.py` (target ≤150 lines), class `FluidraApi(auth, session)`:
   subscribe each device, call `on_update(device_id, component_id:int, value, ts)`; reconnect
   with exponential backoff 5 s → 300 s, forever, until cancelled; fresh token per reconnect;
   never logs the URL/token.
+- Headers: only `Authorization: Bearer <token>` + `Accept`/`Content-Type: application/json`. Drop the legacy
+  `x-api-key`/`x-access-token` (they leak the token into more headers) and the fake `User-Agent` — the confirmed API
+  needs none of them. Build on `FluidraAuth.async_get_access_token()` (T05) and replace `coordinator._auth_headers()`.
 - 15 s timeout per REST call; 401 → one token refresh + retry; maps errors to
   `FluidraAuthError` / `FluidraConnectionError` from T05.
 
