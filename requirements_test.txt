@@ -1,0 +1,4 @@
+pytest-homeassistant-custom-component==0.13.316
+aioresponses==0.7.9
+# Imported by the current auth.py; drop when T05 replaces boto3 with aiohttp.
+boto3==1.43.123

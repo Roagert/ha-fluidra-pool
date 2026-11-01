@@ -34,6 +34,7 @@ Rewrite `coordinator.py` + `__init__.py` around `FluidraApi` (T06):
   unused getters, `local_client.py` import paths (leave `local_client.py` deletion to T15
   decision — just ensure nothing imports it).
 - Keep `dump_api_data` service working until T09 replaces it, or remove it there.
+- Remove the `_start_websocket` patch from `tests/test_smoke.py` (added in T04) and make the smoke test pass without it.
 
 ## Acceptance criteria
 - [ ] Test: setup with WS mocked never blocks — `hass.async_block_till_done()` returns while the listener runs (regression test for #9).

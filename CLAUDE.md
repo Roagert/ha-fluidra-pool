@@ -79,5 +79,5 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - **Secrets**: never log, print, commit or echo passwords, access/refresh tokens or email
   addresses (code, tests, fixtures, diagnostics, commit messages included).
 - **One task = one commit** on branch `finalize-v1`, message `T<NN>: <title>`; do not push.
-- **How to run tests**: See T04 — to be filled.
+- **How to run tests**: `python3.13 -m venv .venv` → `.venv/bin/pip install -r requirements_test.txt` → `.venv/bin/python -m pytest -q`.
 - Full decisions, facts and invariants: `backlog/README.md` (it wins if this summary drifts).
