@@ -136,12 +136,10 @@ def _parse_push(raw: str) -> tuple[str, int, Any, float] | None:
         event = json.loads(raw)
         if isinstance(event.get("body"), str):  # e.g. subscribe replies wrap a JSON string
             event = {**event, **json.loads(event["body"])}
-        return (
-            event["deviceId"],
-            int(event["componentId"]),
-            event["reportedValue"],
-            event.get("ts") or time.time(),
-        )
+        ts = float(event.get("ts") or time.time())
+        if ts > 1e11:  # milliseconds (push format unverified); REST ts is in seconds
+            ts /= 1000
+        return event["deviceId"], int(event["componentId"]), event["reportedValue"], ts
     except (ValueError, TypeError, KeyError, AttributeError):
         _LOGGER.debug("WebSocket message ignored (not a component update)")
         return None

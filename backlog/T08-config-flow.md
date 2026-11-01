@@ -27,6 +27,8 @@ Reference MFA flow: `ha-fluidra-local/custom_components/fluidra_local/config_flo
 
 ## Acceptance criteria
 - [ ] Tests: happy path; MFA path; invalid auth; cannot connect; duplicate account aborts `already_configured`; reauth success updates the password and reloads; migration v1→v2 keeps `unique_id` and username/password.
+- [ ] T07 carry-over: in `tests/test_coordinator.py` the bad-credentials test patches `async_start_reauth`; replace with asserting a `reauth` flow is in `hass.config_entries.flow.async_progress()`.
+- [ ] Pass the stored `refresh_token` from entry data into `FluidraAuth` in `__init__.py`.
 - [ ] A v1 entry from the old code loads without user action (test with a v1 `MockConfigEntry`).
 - [ ] `python -m script.translations`-style check not required; instead a test asserts every `errors`/`abort` key used in code exists in `strings.json`.
 - [ ] Full suite passes.

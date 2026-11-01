@@ -266,3 +266,19 @@ async def test_reconnect_backoff_and_no_token_in_logs(
     assert backoff == expected
     assert ("WebSocket failed: WSServerHandshakeError" in caplog.text) is not accept
     assert "test-ws-token" not in caplog.text
+
+
+@pytest.mark.parametrize(
+    ("ts", "expected"),
+    [(1758877765, 1758877765.0), (1758877765123, 1758877765.123), ("1758877765", 1758877765.0)],
+)
+def test_push_ts_is_seconds(ts, expected) -> None:
+    """Push ts is unverified: milliseconds or strings must not outrank polled seconds."""
+    raw = json.dumps({"deviceId": DEVICE_ID, "componentId": "13", "reportedValue": 1, "ts": ts})
+    assert api_module._parse_push(raw)[3] == pytest.approx(expected)
+
+
+def test_push_with_bad_ts_is_ignored() -> None:
+    """A non-numeric ts must not raise in the coordinator callback and kill the listener."""
+    raw = json.dumps({"deviceId": DEVICE_ID, "componentId": "13", "reportedValue": 1, "ts": "x"})
+    assert api_module._parse_push(raw) is None

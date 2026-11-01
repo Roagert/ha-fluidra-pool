@@ -3,7 +3,7 @@ id: T07
 title: Rewrite coordinator (1,140 → ~200 lines), fix startup block #9
 phase: 3-core
 points: 8
-status: todo
+status: done
 depends_on: [T06]
 owner: agent
 ---
@@ -37,10 +37,21 @@ Rewrite `coordinator.py` + `__init__.py` around `FluidraApi` (T06):
 - Remove the `_start_websocket` patch from `tests/test_smoke.py` (added in T04) and make the smoke test pass without it.
 
 ## Acceptance criteria
-- [ ] Test: setup with WS mocked never blocks — `hass.async_block_till_done()` returns while the listener runs (regression test for #9).
+- [x] Test: setup with WS mocked never blocks — `hass.async_block_till_done()` returns while the listener runs (regression test for #9).
 - [ ] Test: API down at boot → entry state `SETUP_RETRY`; bad creds → `SETUP_ERROR` + reauth flow started.
-- [ ] Test: poll failure → entities unavailable; recovery → available.
-- [ ] Test: WS update with older `ts` is ignored; newer is applied.
-- [ ] Test: two devices on account → both in `coordinator.data`.
-- [ ] Unload cancels WS task and leaves no pending tasks (pytest-hacc `expected_lingering_tasks` false).
-- [ ] `wc -l coordinator.py` ≤ 250. Full suite passes.
+- [x] Test: poll failure → entities unavailable; recovery → available.
+- [x] Test: WS update with older `ts` is ignored; newer is applied.
+- [x] Test: two devices on account → both in `coordinator.data`.
+- [x] Unload cancels WS task and leaves no pending tasks (pytest-hacc `expected_lingering_tasks` false).
+- [x] `wc -l coordinator.py` ≤ 250. Full suite passes.
+
+## Log
+- API: `FluidraPoolDataUpdateCoordinator(hass, entry, api)` = `entry.runtime_data`; `.api`; `.data = {device_id: {"info": raw device dict, "components": {int: {"id", "reportedValue", "desiredValue"?, "ts"}}}}` (all devices); `.uiconfig = {device_id: dict | None}` (once per device, first poll); `async_set_component(device_id, cid: int, value)` (PUT → optimistic `reportedValue`, ts kept → refresh 1 s later via a non-immediate debouncer; `HomeAssistantError` on failure); `@callback async_handle_push(device_id, cid, value, ts)`. Poll 5 min; `FluidraAuthError`→`ConfigEntryAuthFailed`, `FluidraConnectionError`→`UpdateFailed`. Poll and push both keep the newer `ts`.
+- WS: `entry.async_create_background_task(hass, api.async_listen(list(coordinator.data), coordinator.async_handle_push), "fluidra_pool_ws")` — devices found at setup only. Tests: `mock_ws` (FakeWebSocket patching `aiohttp.ClientSession.ws_connect`; `.push(**event)`, `.subscribed`, `.closed`), `config_entry`, `cloud_devices` (parametrizable). #9 test checked by mutation: `hass.async_create_task` → `TimeoutError`.
+- Shim (`# --- compat shim` blocks, delete in T10/T11): coordinator `consumer_data`, `user_profile_data`, `pool_status_data`, `user_pools_data` (all `{}`), `device_id` (first heat pump {13,14,15,19}, else first), `devices` (via `_legacy_device`/`_alarm_text`; `{}` after a failed poll → old entities unavailable), `device_components_data`, `device_uiconfig_data`, `error_information`, `set_component_value`/`set_power_value`/`set_temperature_value`, `schedule_quick_update` (no-op); `__init__`: `hass.data[DOMAIN][entry_id]` (+ pop on unload) and "no devices → return False".
+- Removed behaviour (old code deleted): sensors `user_profile_data`, `user_pools_data` (unique-id suffixes, for CHANGELOG) gone with their fetches; error sensor attr `timestamp` now None; UI-config sensor keyed by real device id; failed commands raise instead of only logging; refresh button refreshes 1 s after press; poll fixed 5 min (options `update_interval`/`api_rate_limit` ignored, reload-on-update listener dropped); `_setup_device_registry` dropped (entities register the same device — old/new states + registry diffed: otherwise identical).
+- Reauth box left open: SETUP_RETRY/SETUP_ERROR and `ConfigEntry.async_start_reauth` call are tested, but the reauth flow itself dies with `UnknownStep` until T08 adds `async_step_reauth` (test patches `async_start_reauth`; T08: assert the flow in `flow.async_progress()` instead).
+- T08: options flow is now a no-op; no update listener, so persisting a refresh token won't reload. T09: `dump_api_data` kept (4 lines in `__init__`, logs `data`+`uiconfig` at INFO) → replace, delete `services.yaml`. T10/T11: use `runtime_data`/`data`/`async_set_component`, grep "compat shim". T12: an HTTP error for any one device fails the whole poll; uiconfig 500 → None is fine. Push callback exceptions (e.g. non-numeric `ts`) end the listener task — verify the push format in U03.
+- Lead review: accepted (coordinator + __init__ read; 46 passed). Reauth box stays unticked → moved to T08.
+  Lead fix in the same commit: `api._parse_push` coerces `ts` to float seconds (ms → s; bad ts →
+  message ignored) so an unverified push format can neither outrank polls forever nor kill the listener.

@@ -15,13 +15,9 @@ CONF_API_RATE_LIMIT = "api_rate_limit"
 # API Configuration
 API_BASE_URL = "https://api.fluidra-emea.com"
 API_DEVICES_URL = f"{API_BASE_URL}/generic/devices"
-API_CONSUMER_URL = f"{API_BASE_URL}/mobile/consumers/me"
 
 # New API Endpoints - Updated with correct working endpoints
-API_ENDPOINT_USER_PROFILE = f"{API_BASE_URL}/generic/users/me"
 API_ENDPOINT_POOLS = f"{API_BASE_URL}/generic/pools"
-API_ENDPOINT_POOL_STATUS = f"{API_BASE_URL}/generic/pools/{{pool_id}}/status"
-API_ENDPOINT_USER_POOLS = f"{API_BASE_URL}/generic/users/me/pools"
 API_ENDPOINT_DEVICE_COMPONENTS = f"{API_BASE_URL}/generic/devices/{{device_id}}/components?deviceType=connected"
 API_ENDPOINT_DEVICE_UICONFIG = f"{API_BASE_URL}/generic/devices/{{device_id}}/uiconfig?appId=iaq&deviceType=connected"
 API_ENDPOINT_SET_COMPONENT_VALUE = f"{API_BASE_URL}/generic/devices/{{device_id}}/components/{{component_id}}?deviceType=connected"
@@ -40,8 +36,6 @@ TOKEN_REFRESH_THRESHOLD = timedelta(minutes=10)
 
 # WebSocket configuration
 WS_URL = "wss://ws.fluidra-emea.com"
-WS_RECONNECT_DELAY = 5  # seconds between reconnect attempts
-WS_MAX_RECONNECT_ATTEMPTS = 10
 
 # API Rate Limiting
 DEFAULT_API_RATE_LIMIT = 60  # requests per minute
