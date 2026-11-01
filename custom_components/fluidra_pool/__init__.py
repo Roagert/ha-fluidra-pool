@@ -3,7 +3,7 @@ import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant, ServiceCall, callback
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import FluidraApi
@@ -58,13 +58,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         coordinator.api.async_listen(list(coordinator.data), coordinator.async_handle_push),
         "fluidra_pool_ws",
     )
-
-    async def handle_dump_api_data(call: ServiceCall) -> None:
-        """Log the latest data (T09 replaces this with a redacted diagnostics download)."""
-        dump = {"devices": coordinator.data, "uiconfig": coordinator.uiconfig}
-        _LOGGER.info("[Fluidra Diagnostic] Dumping latest API data: %s", dump)
-
-    hass.services.async_register(DOMAIN, "dump_api_data", handle_dump_api_data)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True

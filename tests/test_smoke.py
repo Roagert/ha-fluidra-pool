@@ -34,7 +34,7 @@ async def test_setup_and_unload(hass: HomeAssistant, config_entry, mock_api, moc
     ):
         unique_id = f"fluidra_{DEVICE_ID}_{suffix}"
         assert registry.async_get_entity_id(platform, DOMAIN, unique_id), unique_id
-    await hass.services.async_call(DOMAIN, "dump_api_data", blocking=True)
+    assert not hass.services.has_service(DOMAIN, "dump_api_data")  # replaced by diagnostics
 
     assert await hass.config_entries.async_unload(config_entry.entry_id)
     await hass.async_block_till_done()
