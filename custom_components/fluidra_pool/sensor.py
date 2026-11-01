@@ -1,4 +1,5 @@
-"""Sensor platform: temperatures and Wi-Fi signal of each heat pump, alarms of every device."""
+"""Sensor platform: heat-pump temperatures and Wi-Fi signal, alarms of every device, and raw
+component values of the devices we have no mapping for yet (#3 #4 #5 #8)."""
 from dataclasses import dataclass
 from typing import Any
 
@@ -19,6 +20,17 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .coordinator import FluidraPoolDataUpdateCoordinator
 from .entity import FluidraEntity, heat_pumps
+
+
+CELSIUS_MIN, CELSIUS_MAX = -30, 80  # a reading outside this is wrong (#4 showed 404.2 °C)
+SENTINELS = (254, 255, 65535)  # raw values that probably mean "no data" (#8: pH 2.54 = raw 254)
+
+
+def celsius(tenths: int | None) -> float | None:
+    """°C from a component reporting °C × 10; None (unavailable) when out of range."""
+    if tenths is None or not CELSIUS_MIN <= tenths / 10 <= CELSIUS_MAX:
+        return None
+    return tenths / 10
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -61,15 +73,25 @@ async def async_setup_entry(
     entry: ConfigEntry[FluidraPoolDataUpdateCoordinator],
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Add the component sensors of every heat pump and the alarm sensor of every device."""
+    """Add the sensors of every heat pump, the alarm sensor of every device, and for each other
+    device a component count and a raw sensor per numeric component (disabled by default)."""
     coordinator = entry.runtime_data
+    pumps = heat_pumps(coordinator)
+    others = [device_id for device_id in coordinator.data if device_id not in pumps]
     async_add_entities(
         [
             FluidraSensor(coordinator, device_id, description)
-            for device_id in heat_pumps(coordinator)
+            for device_id in pumps
             for description in SENSORS
         ]
         + [FluidraErrorSensor(coordinator, device_id) for device_id in coordinator.data]
+        + [FluidraComponentCountSensor(coordinator, device_id) for device_id in others]
+        + [
+            FluidraComponentSensor(coordinator, device_id, component_id)
+            for device_id in others
+            for component_id, component in coordinator.data[device_id]["components"].items()
+            if type(component.get("reportedValue")) in (int, float)  # a number, not a bool
+        ]
     )
 
 
@@ -91,14 +113,14 @@ class FluidraSensor(FluidraEntity, SensorEntity):
 
     @property
     def available(self) -> bool:
-        """Unavailable while the device does not report the component."""
-        return super().available and self._value(self.entity_description.component) is not None
+        """Unavailable while the device does not report the component, or an implausible °C."""
+        return super().available and self.native_value is not None
 
     @property
     def native_value(self) -> float | None:
         """The reported value; tenths are converted to °C."""
         value = self._value(self.entity_description.component)
-        return value / 10 if self.entity_description.tenths and value is not None else value
+        return celsius(value) if self.entity_description.tenths else value
 
 
 class FluidraErrorSensor(FluidraEntity, SensorEntity):
@@ -128,3 +150,47 @@ class FluidraErrorSensor(FluidraEntity, SensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """The alarms as the cloud reports them."""
         return {"alarms": self._alarms}
+
+
+class FluidraComponentCountSensor(FluidraEntity, SensorEntity):
+    """How many components the cloud reports for a device we have no mapping for."""
+
+    _attr_translation_key = "component_count"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator: FluidraPoolDataUpdateCoordinator, device_id: str) -> None:
+        """Unique id fluidra_<device id>_component_count."""
+        super().__init__(coordinator, device_id, "component_count")
+
+    @property
+    def native_value(self) -> int:
+        """The number of components."""
+        return len(self.coordinator.data.get(self._device_id, {}).get("components", {}))
+
+
+class FluidraComponentSensor(FluidraEntity, SensorEntity):
+    """The raw value of one component of a device we have no mapping for: no scaling, no unit.
+
+    Disabled by default; the meaning of each component waits for reporters' diagnostics.
+    """
+
+    _attr_entity_registry_enabled_default = False
+
+    def __init__(
+        self, coordinator: FluidraPoolDataUpdateCoordinator, device_id: str, component_id: int
+    ) -> None:
+        """Unique id fluidra_<device id>_component_<component id>."""
+        super().__init__(coordinator, device_id, f"component_{component_id}")
+        self._component = component_id
+        self._attr_name = f"Component {component_id}"
+
+    @property
+    def available(self) -> bool:
+        """Unavailable while the component is not reported or reports a sentinel."""
+        return super().available and self.native_value is not None
+
+    @property
+    def native_value(self) -> Any:
+        """The reported value; None for a sentinel."""
+        value = self._value(self._component)
+        return None if value in SENTINELS else value

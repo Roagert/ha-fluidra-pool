@@ -137,3 +137,23 @@ async def test_set_component(hass: HomeAssistant, config_entry, mock_api, mock_w
     mock_api.put(set_url, status=500)
     with pytest.raises(HomeAssistantError):
         await coordinator.async_set_component(DEVICE_ID, 15, 310)
+
+
+@pytest.mark.parametrize("cloud_devices", [TWO_DEVICES])
+async def test_one_failing_device_does_not_take_down_the_others(
+    hass: HomeAssistant, config_entry, mock_api, mock_ws
+) -> None:
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    coordinator = config_entry.runtime_data
+    real = FluidraApi.async_get_components
+
+    async def other_fails(self, device_id):
+        if device_id == OTHER_ID:
+            raise FluidraConnectionError
+        return await real(self, device_id)
+
+    with patch.object(FluidraApi, "async_get_components", other_fails):
+        await coordinator.async_refresh()
+    assert coordinator.last_update_success
+    assert list(coordinator.data) == [DEVICE_ID]  # the failing device's entities go unavailable
+    assert hass.states.get(entity_id(hass, "sensor", "water_temperature")).state == "26.5"

@@ -1,6 +1,4 @@
 """Sensor, switch and binary sensor tests: values from components, commands, unique ids."""
-from unittest.mock import PropertyMock, patch
-
 from homeassistant.components.switch import DOMAIN as SWITCH
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import (
@@ -42,17 +40,6 @@ ENTITIES = {  # entity_id: (unique id suffix, state from the fixture components)
     POWER: ("power", STATE_ON),
     NO_FLOW: ("no_flow", STATE_OFF),
 }
-
-
-@pytest.fixture
-def entity_registry_enabled_by_default():
-    """Create disabled-by-default entities enabled (as HA core's fixture of this name does)."""
-    with patch(
-        "homeassistant.helpers.entity.Entity.entity_registry_enabled_default",
-        new_callable=PropertyMock,
-        return_value=True,
-    ):
-        yield
 
 
 @pytest.fixture
@@ -100,7 +87,11 @@ async def test_entities_and_values(hass: HomeAssistant, config_entry, coordinato
 @pytest.mark.parametrize(
     ("entity_id", "component_id", "value", "state"),
     [(WATER, 19, 270, "27.0"), (AIR, 62, -35, "-3.5"), (TARGET, 15, 300, "30.0"),
-     (RSSI, 1, -70, "-70"), (POWER, 13, 0, STATE_OFF), (NO_FLOW, 28, 1, STATE_ON)],
+     (RSSI, 1, -70, "-70"), (POWER, 13, 0, STATE_OFF), (NO_FLOW, 28, 1, STATE_ON),
+     # implausible °C (#4 showed 404.2 °C): unavailable; -30...80 °C is shown
+     (WATER, 19, 4042, STATE_UNAVAILABLE), (WATER, 19, 801, STATE_UNAVAILABLE),
+     (WATER, 19, 800, "80.0"), (AIR, 62, -301, STATE_UNAVAILABLE), (AIR, 62, -300, "-30.0"),
+     (TARGET, 15, 4042, STATE_UNAVAILABLE)],
 )
 async def test_value_follows_component(
     hass: HomeAssistant, coordinator, entity_id, component_id, value, state
@@ -202,18 +193,21 @@ TWO_DEVICES = [*DEVICES, {**DEVICES[0], "id": OTHER_ID, "sn": OTHER_ID}]
 
 @pytest.mark.usefixtures("entity_registry_enabled_by_default")
 @pytest.mark.parametrize("cloud_devices", [TWO_DEVICES])
-async def test_other_device_gets_error_information_only(
+async def test_other_device_gets_generic_sensors(
     hass: HomeAssistant, config_entry, mock_api, mock_ws, monkeypatch
 ) -> None:
-    """Heat-pump entities need components 13/14/15/19; the alarm sensor fits any device."""
+    """Heat-pump entities need components 13/14/15/19; any other device gets the alarm sensor,
+    a component count and a raw sensor per numeric component (more in test_other_devices)."""
     without_components(monkeypatch, OTHER_ID, 13, 14)
     assert await hass.config_entries.async_setup(config_entry.entry_id)
     await hass.async_block_till_done()
     entries = er.async_entries_for_config_entry(er.async_get(hass), config_entry.entry_id)
+    numeric = (1, 11, 15, 19, 28, 62)  # 2, 3, 4 and 6 report strings
+    suffixes = ["error_information", "component_count", *(f"component_{i}" for i in numeric)]
     assert [e.unique_id for e in entries if OTHER_ID in e.unique_id] == [
-        f"fluidra_{OTHER_ID}_error_information"
+        f"fluidra_{OTHER_ID}_{suffix}" for suffix in suffixes
     ]
-    assert len(entries) == len(ENTITIES) + 1
+    assert len(entries) == len(ENTITIES) + len(suffixes)
 
 
 @pytest.mark.parametrize("cloud_devices", [[]])

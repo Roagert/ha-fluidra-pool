@@ -44,12 +44,18 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator[FluidraData]):
         """Read all devices and their components; keep pushed values newer than the poll."""
         old = self.data or {}
         data: FluidraData = {}
+        failed: FluidraConnectionError | None = None
         try:
             for info in await self.api.async_get_devices():
                 device_id = info["id"]
                 if device_id not in self.uiconfig:
                     self.uiconfig[device_id] = await self.api.async_get_uiconfig(device_id)
-                components = await self.api.async_get_components(device_id)
+                try:
+                    components = await self.api.async_get_components(device_id)
+                except FluidraConnectionError as err:  # one bad device must not hide the others
+                    _LOGGER.debug("Reading device %s failed: %s", device_id, err)
+                    failed = err
+                    continue
                 stored = old.get(device_id, {}).get("components", {})
                 for component_id, component in components.items():
                     if stored.get(component_id, {}).get("ts", 0) > component.get("ts", 0):
@@ -59,6 +65,8 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator[FluidraData]):
             raise ConfigEntryAuthFailed(str(err)) from err
         except FluidraConnectionError as err:
             raise UpdateFailed(str(err)) from err
+        if failed and not data:
+            raise UpdateFailed(str(failed)) from failed
         return data
 
     @callback

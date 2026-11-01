@@ -73,6 +73,9 @@
           "ok": "OK",
           "alarm": "Alarm"
         }
+      },
+      "component_count": {
+        "name": "Components"
       }
     },
     "switch": {

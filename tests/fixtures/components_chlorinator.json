@@ -1,0 +1,14 @@
+[
+  {"id": 1, "reportedValue": -61, "ts": 1758877765},
+  {"id": 3, "reportedValue": "TEST000002", "ts": 1758877765},
+  {"id": 4, "reportedValue": "1.0.0", "ts": 1758877765},
+  {"id": 10, "reportedValue": true, "ts": 1758877765},
+  {"id": 19, "reportedValue": 0, "ts": 1758877765},
+  {"id": 172, "reportedValue": 254, "ts": 1758877765},
+  {"id": 173, "reportedValue": 254, "desiredValue": 720, "ts": 1758877765},
+  {"id": 177, "reportedValue": 650, "desiredValue": 700, "ts": 1758877765},
+  {"id": 178, "reportedValue": 255, "ts": 1758877765},
+  {"id": 179, "reportedValue": 65535, "ts": 1758877765},
+  {"id": 180, "reportedValue": 7.2, "ts": 1758877765},
+  {"id": 181, "reportedValue": {"mode": 1}, "ts": 1758877765}
+]

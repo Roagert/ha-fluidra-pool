@@ -2,7 +2,7 @@
 import asyncio
 import json
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import PropertyMock, patch
 
 import aiohttp
 import pytest
@@ -52,6 +52,17 @@ def auto_enable_custom_integrations(enable_custom_integrations):
 
 
 @pytest.fixture
+def entity_registry_enabled_by_default():
+    """Create disabled-by-default entities enabled (as HA core's fixture of this name does)."""
+    with patch(
+        "homeassistant.helpers.entity.Entity.entity_registry_enabled_default",
+        new_callable=PropertyMock,
+        return_value=True,
+    ):
+        yield
+
+
+@pytest.fixture
 def config_entry(hass) -> MockConfigEntry:
     """A config entry for the fake account, added to hass but not set up."""
     entry = MockConfigEntry(
@@ -72,8 +83,9 @@ def cloud_devices() -> list[dict]:
 
 @pytest.fixture
 def mock_api(cloud_devices):
-    """Canned Cognito login + Fluidra REST. Every device reports the heat-pump fixture
-    components; only DEVICE_ID has a uiconfig, the others answer 500 (as some real ones do)."""
+    """Canned Cognito login + Fluidra REST. Each device reports the components of fixture
+    components_<type>.json; only DEVICE_ID has a uiconfig, the others answer 500 (as some
+    real ones do)."""
     with aioresponses() as mock:
         mock.post(COGNITO_URL, payload=COGNITO_OK, repeat=True)
         mock.get(DEVICES_URL, payload=cloud_devices, repeat=True)
@@ -81,7 +93,7 @@ def mock_api(cloud_devices):
             device_id = device["id"]
             mock.get(
                 API_ENDPOINT_DEVICE_COMPONENTS.format(device_id=device_id),
-                payload=load_fixture("components_amt.json"),
+                payload=load_fixture(f"components_{device['type']}.json"),
                 repeat=True,
             )
             uiconfig = {"payload": {}} if device_id == DEVICE_ID else {"status": 500}

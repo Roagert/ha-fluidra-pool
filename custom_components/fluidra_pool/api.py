@@ -50,7 +50,10 @@ class FluidraApi:
         """Return the device's UI config, or None when the cloud answers 4xx/5xx for it."""
         url = API_ENDPOINT_DEVICE_UICONFIG.format(device_id=device_id)
         status, data = await self._request("GET", url)
-        return data if status < 400 else None
+        if status >= 400:  # e.g. 500 for some non-heat-pump devices (#4 #5)
+            _LOGGER.debug("No UI config for %s: HTTP %d", device_id, status)
+            return None
+        return data
 
     async def async_set_component(
         self, device_id: str, component_id: int, value: Any
