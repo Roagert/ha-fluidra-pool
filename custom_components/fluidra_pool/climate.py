@@ -10,12 +10,10 @@ from homeassistant.components.climate import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
-from .coordinator import HEAT_PUMP_COMPONENTS, FluidraPoolDataUpdateCoordinator
+from .coordinator import FluidraPoolDataUpdateCoordinator
+from .entity import FluidraEntity, heat_pumps
 
 RUNNING, POWER, MODE, SETPOINT, WATER = 11, 13, 14, 15, 19  # component ids; °C values are ×10
 MODES = {  # component 14 value -> (HVAC mode, preset)
@@ -33,17 +31,12 @@ async def async_setup_entry(
 ) -> None:
     """Add a climate entity for every device that has the heat-pump components."""
     coordinator = entry.runtime_data
-    async_add_entities(
-        FluidraHeatPump(coordinator, device_id)
-        for device_id, device in coordinator.data.items()
-        if HEAT_PUMP_COMPONENTS <= device["components"].keys()
-    )
+    async_add_entities(FluidraHeatPump(coordinator, dev_id) for dev_id in heat_pumps(coordinator))
 
 
-class FluidraHeatPump(CoordinatorEntity[FluidraPoolDataUpdateCoordinator], ClimateEntity):
+class FluidraHeatPump(FluidraEntity, ClimateEntity):
     """Power (13), mode (14), setpoint (15) and water temperature (19) of a heat pump."""
 
-    _attr_has_entity_name = True
     _attr_translation_key = "heat_pump"
     _attr_icon = "mdi:heat-pump"
     _attr_hvac_modes = [HVACMode.OFF, HVACMode.HEAT, HVACMode.COOL, HVACMode.AUTO]
@@ -58,23 +51,7 @@ class FluidraHeatPump(CoordinatorEntity[FluidraPoolDataUpdateCoordinator], Clima
 
     def __init__(self, coordinator: FluidraPoolDataUpdateCoordinator, device_id: str) -> None:
         """Serve the device with this id; the unique id is the one of the pre-1.0 entity."""
-        super().__init__(coordinator)
-        self._device_id = device_id
-        self._attr_unique_id = f"fluidra_{device_id}_climate_heatpump"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, device_id)},
-            manufacturer="Fluidra",
-            name=coordinator.data[device_id]["info"].get("info", {}).get("name"),
-        )
-
-    @property
-    def available(self) -> bool:
-        """Unavailable after a failed poll or when the account no longer lists the device."""
-        return super().available and self._device_id in self.coordinator.data
-
-    def _value(self, component_id: int) -> Any:
-        components = self.coordinator.data.get(self._device_id, {}).get("components", {})
-        return components.get(component_id, {}).get("reportedValue")
+        super().__init__(coordinator, device_id, "climate_heatpump")
 
     def _celsius(self, component_id: int) -> float | None:
         value = self._value(component_id)

@@ -1,6 +1,4 @@
 """The Fluidra Pool integration."""
-import logging
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
@@ -8,12 +6,12 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import FluidraApi
 from .auth import FluidraAuth
-from .const import CONF_PASSWORD, CONF_REFRESH_TOKEN, CONF_USERNAME, DOMAIN
+from .const import CONF_PASSWORD, CONF_REFRESH_TOKEN, CONF_USERNAME
 from .coordinator import FluidraPoolDataUpdateCoordinator
 
-_LOGGER = logging.getLogger(__name__)
-
-PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BUTTON, Platform.CLIMATE]
+PLATFORMS: list[Platform] = [
+    Platform.CLIMATE, Platform.SENSOR, Platform.SWITCH, Platform.BINARY_SENSOR
+]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -41,16 +39,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     async_store_refresh_token()
     entry.async_on_unload(coordinator.async_add_listener(async_store_refresh_token))
 
-    # --- compat shim for pre-T10/T11 entities; delete in T10/T11 ---
-    if coordinator.device_id is None:
-        _LOGGER.error("No devices found on this Fluidra account")
-        return False
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
-        "coordinator": coordinator,
-        "device_id": coordinator.device_id,
-    }
-    # --- end compat shim ---
-
     # A background task does not hold up HA startup (issue #9); unloading cancels it.
     # It subscribes the devices found now: entities exist for those only, until a reload.
     entry.async_create_background_task(
@@ -73,6 +61,4 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload the platforms; the coordinator and the WebSocket task stop with the entry."""
-    if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
-        hass.data[DOMAIN].pop(entry.entry_id)  # compat shim; delete in T10/T11
-    return unload_ok
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)

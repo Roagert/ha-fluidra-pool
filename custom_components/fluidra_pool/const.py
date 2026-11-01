@@ -7,8 +7,6 @@ DOMAIN = "fluidra_pool"
 # Configuration keys
 CONF_USERNAME = "username"
 CONF_PASSWORD = "password"
-CONF_DEVICE_ID = "device_id"
-CONF_COMPONENT_ID = "component_id"
 CONF_REFRESH_TOKEN = "refresh_token"
 
 # API Configuration
@@ -32,41 +30,3 @@ TOKEN_REFRESH_THRESHOLD = timedelta(minutes=10)
 
 # WebSocket configuration
 WS_URL = "wss://ws.fluidra-emea.com"
-
-# Error codes for better error handling
-ERROR_CODES = {
-    "AUTH_FAILED": "Authentication failed",
-    "RATE_LIMIT_EXCEEDED": "API rate limit exceeded",
-    "DEVICE_NOT_FOUND": "Device not found",
-    "POOL_NOT_FOUND": "Pool not found",
-    "COMPONENT_NOT_FOUND": "Component not found",
-    "API_ERROR": "API request failed",
-    "NETWORK_ERROR": "Network connection error",
-    "TIMEOUT_ERROR": "Request timeout",
-    "INVALID_RESPONSE": "Invalid API response",
-    "TOKEN_EXPIRED": "Authentication token expired",
-    "REFRESH_FAILED": "Token refresh failed",
-    "UNKNOWN_ERROR": "Unknown error occurred",
-    # Device-specific error codes (from Fluidra API)
-    "E001": "No water flow detected",
-    "E002": "Water temperature sensor error",
-    "E003": "Ambient temperature sensor error", 
-    "E004": "High pressure alarm",
-    "E005": "Low pressure alarm",
-    "E006": "Compressor overload",
-    "E007": "Fan motor error",
-    "E008": "Heat exchanger error",
-    "E009": "Communication error",
-    "E010": "Power supply error",
-    "E011": "Defrost sensor error",
-    "E012": "Low water temperature",
-    "E013": "High water temperature",
-    "E014": "Phase sequence error",
-    "E015": "Inverter communication error",
-    "E016": "Water flow switch error",
-    "W001": "Low ambient temperature",
-    "W002": "Defrost mode active",
-    "W003": "Filter cleaning required",
-    "W004": "Maintenance required",
-    "W005": "High water temperature warning"
-}

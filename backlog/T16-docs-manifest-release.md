@@ -20,7 +20,7 @@ features that no longer exist.
 - Note: invalid manifest keys and `aiohttp` were already removed by the lead to unblock CI hassfest (commit `CI: …`).
 - `manifest.json`: domain, name, codeowners, config_flow, documentation, issue_tracker,
   integration_type `hub`, iot_class `cloud_push`, loggers `["custom_components.fluidra_pool"]`,
-  requirements `[]`, version `2.0.0`. `hacs.json`: `homeassistant: "2024.2.0"`.
+  requirements `[]`, version `2.0.0`. `hacs.json`: `homeassistant: "2025.2.0"` (code uses `AddConfigEntryEntitiesCallback` (2025.2) and `DeviceInfo.model_id` (2024.8) — verify against HA release notes).
 - `README.md`: what it is, supported devices (tested: Amitime heat pump; others: generic),
   install (HACS), setup (MFA), entities table, local-control status (link LOCAL_DECISION if present), diagnostics how-to.
 - Merge `PROTOCOL_FINDINGS.md` into `PROTOCOL.md` (one protocol doc, no PII), fix WS auth/IP.

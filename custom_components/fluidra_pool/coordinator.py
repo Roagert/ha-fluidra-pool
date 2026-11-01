@@ -11,7 +11,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .api import FluidraApi
 from .auth import FluidraAuthError, FluidraConnectionError
-from .const import ERROR_CODES, QUICK_UPDATE_INTERVAL
+from .const import QUICK_UPDATE_INTERVAL
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -86,78 +86,3 @@ class FluidraPoolDataUpdateCoordinator(DataUpdateCoordinator[FluidraData]):
         components[component_id] = {**components.get(component_id, {}), "reportedValue": value}
         self.async_set_updated_data(self.data)  # this cancels a pending refresh, so request after
         await self.async_request_refresh()
-
-    # --- compat shim for pre-T10/T11 entities; delete in T10/T11 ---
-    # sensor.py and button.py still read the old coordinator's attributes.
-    consumer_data = user_profile_data = pool_status_data = user_pools_data = {}  # fetches gone
-
-    @property
-    def device_id(self) -> str | None:
-        """The one device the old entities serve: the first heat pump, else the first device."""
-        heat_pumps = [
-            device_id
-            for device_id, dev in self.data.items()
-            if HEAT_PUMP_COMPONENTS <= dev["components"].keys()
-        ]
-        return next(iter(heat_pumps or self.data), None)
-
-    @property
-    def devices(self) -> dict[str, dict[str, Any]]:
-        """Old-style device dicts; empty after a failed poll so the old entities go unavailable."""
-        if not self.last_update_success:
-            return {}
-        return {device_id: _legacy_device(dev["info"]) for device_id, dev in self.data.items()}
-
-    @property
-    def device_components_data(self) -> dict[str, dict[int, dict[str, Any]]]:
-        """{device_id: components}."""
-        return {device_id: dev["components"] for device_id, dev in self.data.items()}
-
-    @property
-    def device_uiconfig_data(self) -> dict[str, dict[str, Any]]:
-        """{device_id: uiconfig} for the devices that have one."""
-        return {device_id: ui for device_id, ui in self.uiconfig.items() if ui is not None}
-
-    @property
-    def error_information(self) -> dict[str, Any]:
-        """Alarm summary of the device the old entities serve."""
-        if not (device := self.devices.get(self.device_id)):
-            return {}
-        keys = ("error_code", "error_message", "alarm_status", "alarm_count")
-        return {
-            **{key: device[key] for key in keys},
-            "device_id": self.device_id,
-            "error_description": ERROR_CODES.get(device["error_code"], "Unknown error"),
-        }
-
-
-def _legacy_device(info: dict[str, Any]) -> dict[str, Any]:
-    """The fields the old entities read from the old coordinator's processed device."""
-    alarms = info.get("alarms", [])
-    errors = [alarm for alarm in alarms if alarm.get("type") == "error"]
-    warnings = [alarm for alarm in alarms if alarm.get("type") == "warning"]
-    device = {
-        "serial_number": info.get("sn") or info.get("serialNumber") or info.get("SerialNumber"),
-        "device_name": info.get("info", {}).get("name"),
-        "device_model": info.get("info", {}).get("family"),
-        "device_firmware": info.get("vr") or info.get("currentFirmwareVersion"),
-        "status": info.get("status"),
-        "alarm_count": len(alarms),
-        "alarm_status": (
-            "error" if errors else "warning" if warnings else "unknown" if alarms else "normal"
-        ),
-        "error_code": None,
-        "error_message": None,
-    }
-    if errors:
-        code = device["error_code"] = errors[0].get("errorCode") or errors[0].get("code")
-        device["error_message"] = _alarm_text(errors[0]) or ERROR_CODES.get(code, "Unknown error")
-    elif warnings:
-        device["warning_code"] = warnings[0].get("warningCode") or warnings[0].get("code")
-        device["warning_message"] = _alarm_text(warnings[0]) or "Warning condition detected"
-    return device
-
-
-def _alarm_text(alarm: dict[str, Any]) -> str | None:
-    return alarm.get("message") or alarm.get("text") or alarm.get("default", {}).get("text")
-# --- end compat shim ---

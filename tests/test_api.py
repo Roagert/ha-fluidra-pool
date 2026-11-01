@@ -86,7 +86,7 @@ async def test_get_devices(api, cloud) -> None:
 async def test_get_components_keyed_by_int(api, cloud) -> None:
     cloud.get(COMPONENTS_URL, payload=load_fixture("components_amt.json"))
     components = await api.async_get_components(DEVICE_ID)
-    assert sorted(components) == [1, 2, 3, 4, 11, 13, 14, 15, 19, 28, 62]
+    assert sorted(components) == [1, 2, 3, 4, 6, 11, 13, 14, 15, 19, 28, 62]
     assert components[15] == {"id": 15, "reportedValue": 280, "desiredValue": 280, "ts": 1758877765}
 
 

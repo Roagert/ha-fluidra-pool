@@ -3,6 +3,7 @@
   {"id": 2, "reportedValue": "192.0.2.10", "ts": 1758877765},
   {"id": 3, "reportedValue": "TEST000001", "ts": 1758877765},
   {"id": 4, "reportedValue": "2.5.0", "ts": 1758877765},
+  {"id": 6, "reportedValue": "1441", "ts": 1758877765},
   {"id": 11, "reportedValue": 1, "ts": 1758877765},
   {"id": 13, "reportedValue": 1, "ts": 1758877765},
   {"id": 14, "reportedValue": 0, "ts": 1758877765},

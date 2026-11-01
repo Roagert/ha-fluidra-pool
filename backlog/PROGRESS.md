@@ -1,4 +1,4 @@
-# Progress: 55%  [###########.........]  (41/75 points)
+# Progress: 61%  [############........]  (46/75 points)
 
 in_progress counts half. Regenerate with `python3 backlog/progress.py`.
 
@@ -14,7 +14,7 @@ in_progress counts half. Regenerate with `python3 backlog/progress.py`.
 | T08 | Config flow — MFA, reauth, compatible unique_id, translations | 3-core | 5 | done | agent |
 | T09 | Redacted diagnostics download; remove dump_api_data service | 3-core | 2 | done | agent |
 | T10 | Climate entity correctness (modes, presets, hvac_action, errors) | 4-entities | 5 | done | agent |
-| T11 | Sensors, power switch, no-flow binary sensor; drop raw-JSON sensors | 4-entities | 5 | todo | agent |
+| T11 | Sensors, power switch, no-flow binary sensor; drop raw-JSON sensors | 4-entities | 5 | done | agent |
 | T12 | Other devices — no crash, no bogus values, generic sensors | 4-entities | 5 | todo | agent |
 | T13 | AP packet-capture runbook + pcap analyzer | 5-local | 3 | done | agent |
 | T14 | Analyze capture → local-path decision record | 5-local | 3 | todo | agent |

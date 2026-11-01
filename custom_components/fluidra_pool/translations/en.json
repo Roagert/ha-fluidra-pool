@@ -35,6 +35,11 @@
     }
   },
   "entity": {
+    "binary_sensor": {
+      "no_flow": {
+        "name": "No flow"
+      }
+    },
     "climate": {
       "heat_pump": {
         "name": "Pool heat pump",
@@ -47,6 +52,32 @@
             }
           }
         }
+      }
+    },
+    "sensor": {
+      "water_temperature": {
+        "name": "Water temperature"
+      },
+      "air_temperature": {
+        "name": "Air temperature"
+      },
+      "target_temperature": {
+        "name": "Target temperature"
+      },
+      "wifi_rssi": {
+        "name": "Wi-Fi signal"
+      },
+      "error_information": {
+        "name": "Error information",
+        "state": {
+          "ok": "OK",
+          "alarm": "Alarm"
+        }
+      }
+    },
+    "switch": {
+      "power": {
+        "name": "Power"
       }
     }
   }
