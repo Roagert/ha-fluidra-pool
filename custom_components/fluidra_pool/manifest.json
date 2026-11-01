@@ -1,22 +1,22 @@
 {
   "domain": "fluidra_pool",
   "name": "Fluidra Pool",
-  "config_flow": true,
-  "documentation": "https://github.com/Roagert/ha-fluidra-pool",
-  "issue_tracker": "https://github.com/Roagert/ha-fluidra-pool/issues",
-  "dependencies": [],
   "codeowners": [
     "@roagert"
   ],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/Roagert/ha-fluidra-pool",
+  "homekit": {},
+  "integration_type": "device",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/Roagert/ha-fluidra-pool/issues",
+  "quality_scale": "platinum",
   "requirements": [
     "boto3>=1.26.0",
     "pycognito>=2023.5.0"
   ],
   "ssdp": [],
-  "zeroconf": [],
-  "homekit": {},
-  "iot_class": "cloud_polling",
   "version": "1.0.0",
-  "integration_type": "device",
-  "quality_scale": "platinum"
+  "zeroconf": []
 }
