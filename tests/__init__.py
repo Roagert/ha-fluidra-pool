@@ -1,1 +1,1 @@
-"""Tests package for Fluidra Pool integration.""" 
+"""Tests for the Fluidra Pool integration."""

@@ -1,0 +1,7 @@
+[
+  {"id": 1, "reportedValue": -58, "ts": 1758877765},
+  {"id": 3, "reportedValue": "TEST000004", "ts": 1758877765},
+  {"id": 14, "reportedValue": 0, "ts": 1758877765},
+  {"id": 15, "reportedValue": 280, "desiredValue": 280, "ts": 1758877765},
+  {"id": 19, "reportedValue": 265, "ts": 1758877765}
+]

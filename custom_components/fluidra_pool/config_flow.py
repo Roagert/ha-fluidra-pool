@@ -1,175 +1,99 @@
-"""Config flow for Fluidra Pool integration."""
+"""Config flow for Fluidra Pool: e-mail + password, an MFA code if the account asks, reauth."""
+from collections.abc import Awaitable, Mapping
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 import voluptuous as vol
 
-from homeassistant import config_entries
-from homeassistant.core import callback
-from homeassistant.data_entry_flow import FlowResult
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.config_entries import SOURCE_REAUTH, ConfigFlow, ConfigFlowResult
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import (
-    DOMAIN, 
-    CONF_USERNAME, 
-    CONF_PASSWORD, 
-    CONF_DEVICE_ID, 
-    CONF_COMPONENT_ID,
-    CONF_UPDATE_INTERVAL,
-    CONF_API_RATE_LIMIT,
-    DEFAULT_SCAN_INTERVAL,
-    DEFAULT_API_RATE_LIMIT,
-    MIN_SCAN_INTERVAL,
-    MAX_SCAN_INTERVAL,
-    MIN_API_RATE_LIMIT,
-    MAX_API_RATE_LIMIT,
-)
-from .auth import FluidraAuth
+from .auth import FluidraAuth, FluidraAuthError, FluidraConnectionError, MfaRequired
+from .const import CONF_PASSWORD, CONF_REFRESH_TOKEN, CONF_USERNAME, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-class FluidraPoolConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for Fluidra Pool."""
+USER_SCHEMA = vol.Schema({vol.Required(CONF_USERNAME): str, vol.Required(CONF_PASSWORD): str})
+REAUTH_SCHEMA = vol.Schema({vol.Required(CONF_PASSWORD): str})
+MFA_SCHEMA = vol.Schema({vol.Required("code"): str})
 
-    VERSION = 1
+
+class FluidraPoolConfigFlow(ConfigFlow, domain=DOMAIN):
+    """Log in to the Fluidra cloud; store the login and its refresh token."""
+
+    VERSION = 2
 
     def __init__(self) -> None:
-        """Initialize the config flow."""
-        super().__init__()
-        self._username: Optional[str] = None
-        self._password: Optional[str] = None
+        """Hold the login between the password and the MFA step."""
+        self._username = ""
+        self._password = ""
+        self._auth: FluidraAuth | None = None
+        self._mfa_session = ""
 
-    async def async_step_user(
-        self, user_input: Optional[Dict[str, Any]] = None
-    ) -> FlowResult:
-        """Handle the initial step."""
-        errors = {}
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Ask for the account's e-mail and password."""
+        if user_input is None:
+            return self.async_show_form(step_id="user", data_schema=USER_SCHEMA)
+        await self.async_set_unique_id(f"fluidra_pool_{user_input[CONF_USERNAME]}")
+        self._abort_if_unique_id_configured()
+        return await self._async_login("user", USER_SCHEMA, user_input)
 
-        if user_input is not None:
-            try:
-                # Test authentication
-                auth = FluidraAuth(user_input[CONF_USERNAME], user_input[CONF_PASSWORD])
-                if await auth.refresh_token_if_needed():
-                    self._username = user_input[CONF_USERNAME]
-                    self._password = user_input[CONF_PASSWORD]
-                    
-                    # Create unique ID for this configuration
-                    unique_id = f"fluidra_pool_{self._username}"
-                    
-                    # Check if this configuration already exists
-                    await self.async_set_unique_id(unique_id)
-                    self._abort_if_unique_id_configured()
-                    
-                    # Create the config entry directly
-                    return self.async_create_entry(
-                        title=f"Fluidra Pool ({self._username})",
-                        data={
-                            CONF_USERNAME: self._username,
-                            CONF_PASSWORD: self._password,
-                            CONF_DEVICE_ID: "default_device",  # Will be discovered during setup
-                            CONF_COMPONENT_ID: "",  # Will be discovered during setup
-                            CONF_UPDATE_INTERVAL: int(DEFAULT_SCAN_INTERVAL.total_seconds() / 60),
-                            CONF_API_RATE_LIMIT: DEFAULT_API_RATE_LIMIT,
-                        },
-                    )
-                else:
-                    errors["base"] = "invalid_auth"
-            except Exception as err:
-                _LOGGER.error("Authentication error: %s", err)
-                errors["base"] = "invalid_auth"
+    async def async_step_reauth(self, entry_data: Mapping[str, Any]) -> ConfigFlowResult:
+        """The stored login was rejected: ask for the password again."""
+        return await self.async_step_reauth_confirm()
 
-        return self.async_show_form(
-            step_id="user",
-            data_schema=vol.Schema({
-                vol.Required(CONF_USERNAME): str,
-                vol.Required(CONF_PASSWORD): str,
-            }),
-            errors=errors,
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask for the password of the entry's account (the e-mail cannot change)."""
+        if user_input is None:
+            return self.async_show_form(step_id="reauth_confirm", data_schema=REAUTH_SCHEMA)
+        user_input = {**user_input, CONF_USERNAME: self._get_reauth_entry().data[CONF_USERNAME]}
+        return await self._async_login("reauth_confirm", REAUTH_SCHEMA, user_input)
+
+    async def async_step_mfa(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Ask for the code of the account's second factor."""
+        if user_input is None:
+            return self.async_show_form(step_id="mfa", data_schema=MFA_SCHEMA)
+        code = user_input["code"].strip()
+        return await self._async_try(
+            "mfa", MFA_SCHEMA, "invalid_mfa", self._auth.async_respond_mfa(self._mfa_session, code)
         )
 
-    @staticmethod
-    @callback
-    def async_get_options_flow(config_entry: config_entries.ConfigEntry) -> config_entries.OptionsFlow:
-        """Get the options flow for this handler."""
-        return FluidraPoolOptionsFlow(config_entry)
+    async def _async_login(
+        self, step_id: str, schema: vol.Schema, user_input: dict[str, Any]
+    ) -> ConfigFlowResult:
+        """Log in with the password entered in step_id."""
+        self._username = user_input[CONF_USERNAME]
+        self._password = user_input[CONF_PASSWORD]
+        session = async_get_clientsession(self.hass)
+        self._auth = FluidraAuth(session, self._username, self._password)
+        return await self._async_try(step_id, schema, "invalid_auth", self._auth.async_login())
 
-class FluidraPoolOptionsFlow(config_entries.OptionsFlow):
-    """Handle Fluidra Pool options."""
-    
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        """Initialize options flow."""
-        self.config_entry = config_entry
-    
-    async def async_step_init(self, user_input=None) -> FlowResult:
-        """Manage the options."""
-        config_entry = self.config_entry
-        
-        if user_input is not None:
-            # Validate input
-            update_interval = user_input[CONF_UPDATE_INTERVAL]
-            api_rate_limit = user_input[CONF_API_RATE_LIMIT]
-            
-            # Validate update interval
-            if update_interval < int(MIN_SCAN_INTERVAL.total_seconds() / 60):
-                update_interval = int(MIN_SCAN_INTERVAL.total_seconds() / 60)
-            elif update_interval > int(MAX_SCAN_INTERVAL.total_seconds() / 60):
-                update_interval = int(MAX_SCAN_INTERVAL.total_seconds() / 60)
-            
-            # Validate API rate limit
-            if api_rate_limit < MIN_API_RATE_LIMIT:
-                api_rate_limit = MIN_API_RATE_LIMIT
-            elif api_rate_limit > MAX_API_RATE_LIMIT:
-                api_rate_limit = MAX_API_RATE_LIMIT
-            
-            # Update config entry
-            new_data = config_entry.data.copy()
-            new_data[CONF_UPDATE_INTERVAL] = update_interval
-            new_data[CONF_API_RATE_LIMIT] = api_rate_limit
-            
-            self.hass.config_entries.async_update_entry(
-                config_entry, data=new_data
-            )
-            
-            return self.async_create_entry(title="", data=user_input)
-        
-        # Get current values
-        current_update_interval = config_entry.data.get(
-            CONF_UPDATE_INTERVAL, 
-            int(DEFAULT_SCAN_INTERVAL.total_seconds() / 60)
-        )
-        current_api_rate_limit = config_entry.data.get(
-            CONF_API_RATE_LIMIT, 
-            DEFAULT_API_RATE_LIMIT
-        )
-        
-        return self.async_show_form(
-            step_id="init",
-            data_schema=vol.Schema({
-                vol.Optional(
-                    CONF_UPDATE_INTERVAL,
-                    default=current_update_interval,
-                ): vol.All(
-                    vol.Coerce(int),
-                    vol.Range(
-                        min=int(MIN_SCAN_INTERVAL.total_seconds() / 60),
-                        max=int(MAX_SCAN_INTERVAL.total_seconds() / 60)
-                    )
-                ),
-                vol.Optional(
-                    CONF_API_RATE_LIMIT,
-                    default=current_api_rate_limit,
-                ): vol.All(
-                    vol.Coerce(int),
-                    vol.Range(min=MIN_API_RATE_LIMIT, max=MAX_API_RATE_LIMIT)
-                ),
-            }),
-        )
-
-class InvalidAuth(HomeAssistantError):
-    """Error to indicate there is invalid auth."""
-
-class CannotConnect(HomeAssistantError):
-    """Error to indicate we cannot connect."""
-
-class AlreadyConfigured(HomeAssistantError):
-    """Error to indicate device is already configured.""" 
+    async def _async_try(
+        self, step_id: str, schema: vol.Schema, auth_error: str, login: Awaitable[str]
+    ) -> ConfigFlowResult:
+        """Await a login call: store the entry, ask for an MFA code, or show step_id's error."""
+        try:
+            await login
+        except MfaRequired as err:
+            self._mfa_session = err.session
+            return await self.async_step_mfa()
+        except FluidraAuthError:
+            error = auth_error
+        except FluidraConnectionError:
+            error = "cannot_connect"
+        except Exception:
+            _LOGGER.exception("Unexpected error during the Fluidra login")
+            error = "unknown"
+        else:
+            data = {
+                CONF_USERNAME: self._username,
+                CONF_PASSWORD: self._password,
+                CONF_REFRESH_TOKEN: self._auth.refresh_token,
+            }
+            if self.source == SOURCE_REAUTH:
+                return self.async_update_reload_and_abort(self._get_reauth_entry(), data=data)
+            # Not the e-mail: Home Assistant writes entry titles to its log.
+            return self.async_create_entry(title="Fluidra Pool", data=data)
+        return self.async_show_form(step_id=step_id, data_schema=schema, errors={"base": error})

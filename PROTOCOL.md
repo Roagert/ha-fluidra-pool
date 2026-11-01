@@ -1,245 +1,153 @@
-# Fluidra iQBridge Protocol — Reverse Engineering Findings
+# Fluidra cloud protocol
 
-> Extracted from `com.fluidra.iaqualinkplus` (XAPK) via `libapp.so` (Flutter/Dart snapshot) analysis.
-> Analysis date: 2026-03-29
+What the integration talks to, and what is known about the rest. Sources: a live API capture
+of an Amitime heat pump (`amt`) on 2026-03-30, the integration's own tests, and reverse
+engineering of the Android app's `libapp.so` on 2026-03-29 ([docs/RE-libapp.md](docs/RE-libapp.md);
+raw dumps and tooling in [`Roagert/fluidra-re`](https://github.com/Roagert/fluidra-re)).
 
----
+Status labels: **confirmed** = seen on the wire; **unverified** = expected, not yet seen;
+**hypothesis** = read from the app binary only.
 
-## App Architecture
+## 1. Authentication — confirmed
 
-The official Fluidra Pool app is a **Flutter/Dart** app. All protocol logic lives in
-`libapp.so` (the Dart AOT snapshot), not in the Java layer. Key Dart packages:
+AWS Cognito, plain JSON over HTTPS (no SDK needed):
 
-| Package | Role |
-|---------|------|
-| `generic_api` | OpenAPI-generated REST client models |
-| `fluidra_iot_generic_api_client` | IoT API client (Dart) |
-| `fluidra_ble` | BLE transport layer (iQBridge RS, Lumi+, Rio, Nodon) |
-| `iaqualink_plus` | Main app (screens, cubits, command & control) |
+| Field | Value |
+|---|---|
+| Endpoint | `POST https://cognito-idp.eu-west-1.amazonaws.com/` |
+| Headers | `Content-Type: application/x-amz-json-1.1`, `X-Amz-Target: AWSCognitoIdentityProviderService.<Action>` |
+| User pool / client id | `eu-west-1_OnopMZF9X` / `g3njunelkcbtefosqm9bdhhq1` |
+| Login | `InitiateAuth`, `AuthFlow: USER_PASSWORD_AUTH`, `USERNAME` = account e-mail, `PASSWORD` |
+| MFA (some accounts) | reply `ChallengeName: SOFTWARE_TOKEN_MFA` or `SMS_MFA` + `Session` → `RespondToAuthChallenge` with `<challenge>_CODE` |
+| Refresh | `InitiateAuth`, `AuthFlow: REFRESH_TOKEN_AUTH`, `REFRESH_TOKEN` |
+| Access token TTL | about 300 s |
 
----
+The access token is used for both REST and WebSocket.
 
-## Command & Control Modes
+## 2. REST — confirmed
 
-The app supports **three** distinct command and control channels, selected by the cloud API
-(via `MobileCommandAndControl` discriminated union):
+Base `https://api.fluidra-emea.com`, header `Authorization: Bearer <access token>`.
 
-| Class | Source file | Description |
-|-------|-------------|-------------|
-| `MobileCommandAndControlCloud` | `mobile_command_and_control_cloud.dart` | Cloud WebSocket relay |
-| `MobileCommandAndControlLocalUdp` | `mobile_command_and_control_local_udp.dart` | **Direct LAN UDP to iQBridge** |
-| `MobileCommandAndControlBle` | `mobile_command_and_control_ble.dart` | Bluetooth LE (iQBridge RS) |
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/generic/devices?deviceType=connected` | the account's devices |
+| GET | `/generic/devices/{id}?deviceType=connected` | one device |
+| GET | `/generic/devices/{id}/components?deviceType=connected` | all components (83 on `amt`) |
+| GET | `/generic/devices/{id}/components/{cid}?deviceType=connected` | one component |
+| PUT | `/generic/devices/{id}/components/{cid}?deviceType=connected` | body `{"desiredValue": <value>}` |
+| GET | `/generic/devices/{id}/uiconfig?appId=iaq&deviceType=connected` | UI layout; HTTP 500 for some devices |
+| GET | `/generic/users/me`, `/generic/users/me/pools` | profile, pools (not used by the integration) |
 
-The `MobileCommandAndControlLocalUdp` model is the key target for local-first HA integration.
+A component is `{"id": 15, "reportedValue": 290, "desiredValue": 290, "ts": 1758204079}`
+(`desiredValue` is not always present; `ts` in seconds). The PUT replies with the same
+shape, and is accepted (stored by the cloud) while the device is offline.
 
----
+## 3. WebSocket — connect and subscribe confirmed, push unverified
 
-## Cloud WebSocket Protocol
+- URL `wss://ws.fluidra-emea.com?token=<access token>`: the token goes in the **query
+  string**, not in a header. (The app also knows `test.`, `stage.` and `dev.` hosts.)
+- Subscribe, once per device:
+  `{"action": "subsDevice", "deviceType": "connected", "deviceId": "<device id>"}`
+- Reply: `{"statusCode": 200, "action": "subsDevice", "body": "{\"deviceId\":\"<device id>\",\"deviceType\":\"connected\",\"message\":\"OK\"}"}`
+  (`body` is a JSON string).
+- Push, **unverified** (the device was offline during the capture):
+  `{"action": "command", "deviceId": "<device id>", "deviceType": "connected", "componentId": "13", "reportedValue": 1}`.
+  The integration merges a string `body` into the message and accepts `ts` in s or ms.
+- Hypothesis (app binary): commands over the socket as
+  `{"action": "command", "commandId": "<component id>", "desiredValue": <value>}`. Not used;
+  the integration sends commands by REST PUT.
 
-### WebSocket Endpoints
+## 4. Components of the `amt` heat pump — confirmed unless marked
 
-| Environment | URL |
-|-------------|-----|
-| Production  | `wss://ws.fluidra-emea.com` |
-| Test        | `wss://test.ws.fluidra-emea.com` |
-| Stage       | `wss://stage.ws.fluidra-emea.com` |
-| Dev         | `wss://dev.ws.fluidra-emea.com` |
+Temperatures are °C × 10 (`290` = 29.0 °C).
 
-**Authentication:** Bearer token (AWS Cognito JWT — same token as REST API).
+| ID | Meaning | Example / range |
+|---|---|---|
+| 0 | operating hours counter | `409` |
+| 1 | Wi-Fi RSSI, dBm | `-82` |
+| 2 | LAN IP of the device (redacted in diagnostics) | string |
+| 3 | serial number (= device id) | string |
+| 4 | firmware version | `2.5.0` |
+| 5 | model code | `amt` |
+| 6 | SKU | `1441` |
+| 7 | Wi-Fi module serial | string |
+| 8, 9 | reserved / empty | |
+| 10 | connected accessories | `[{"p":"nn","id":"nn_1"}]` |
+| 11 | running state — **unverified** | 0 idle, 1 running |
+| 13 | **power** (read/write) | 0 off, 1 on |
+| 14 | **mode** (read/write) | see below |
+| 15 | **setpoint** (read/write) | 150–420 (15.0–42.0 °C) |
+| 16 | target / auto sub-mode — unknown | `2` |
+| 17 | timer / schedule flag — unknown | `0` |
+| 18 | anti-freeze / silent flag — unknown | `0` |
+| 19 | **water temperature** | `131` = 13.1 °C |
+| 28 | no-flow error — **unverified** (per `ha-fluidra-local`) | 0 = flow OK |
+| 62 | outdoor air temperature | `320` = 32.0 °C |
+| 65–70 | further temperature sensors — meaning unknown | °C × 10 |
+| 137, 185, 272, 276 | referenced by the UI config — meaning unknown | |
 
-### Subscribe to device events
+Mode (component 14), as captured, and how the integration shows it:
 
-```json
-{"action": "subsDevice", "deviceType": "connected", "deviceId": "<device_id>"}
-```
+| Value | Mode | HA HVAC mode / preset |
+|---|---|---|
+| 0 | SmartHeat | heat / smart |
+| 1 | SmartCool | cool / smart |
+| 2 | SmartAuto | auto / smart |
+| 3 | BoostHeat | heat / boost |
+| 4 | SilenceHeat | heat / silence |
+| 5 | BoostCool | cool / boost |
+| 6 | SilenceCool | cool / silence |
 
-### Send a command
+Other device types (chlorinators, Blue Connect, iQBridge, …) use other component ids; they
+are unmapped until diagnostics from their owners arrive.
 
-```json
-{"action": "command", "commandId": "<component_id>", "desiredValue": <value>}
-```
-
-### Real-time event model
-
-Class: `WebSocketEvent` (from `WebSocketEventProcessor` / `WebSocketSubscriptionResponseEvent`).
-
-The WebSocket replaces cloud polling with push events — latency drops from 15 min to < 1 s.
-
-### Scheduler WebSocket
-
-There is a separate scheduler WebSocket path. From app source:
-- `disableSchedulerWebsockets` flag — the app can disable scheduler WS independently.
-
----
-
-## Local UDP Protocol (iQBridge RS)
-
-Source: `package:generic_api/src/model/mobile_command_and_control_local_udp.dart`
-
-The `MobileCommandAndControlLocalUdp` model is returned by the cloud API for devices that
-support local LAN control (iQBridge RS with local mode enabled). Fields observed from binary:
-
-- `localUdp` — the local UDP configuration object
-- Contains: host/IP, port, and authentication token (serial-based key)
-
-**Likely port**: **9003** (best guess from binary strings; candidates: 8902, 9090, 9298, 5781)
-**Discovery**: cloud API `commandAndControl.localUdp` field in device response.
-
-### Packet Format (Hypothesis — from Cipher RE session 2026-03-29)
-
-```
-[0x12 0x34] [Protocol:1] [CommandID:2 BE] [PayloadLen:4 BE] [Payload:N] [CRC32:4] [HMAC-SHA256:32]
-```
-
-Key functions in binary: `initUdpDeviceListener`, `sendUDPCommand`, `udpKey`, `updateUPDkey`,
-`FluidraMessageProtocol`, `MagicNumber`, `payloadIntBE`, `payloadIntLE`, `getCrc32Byte`, `hmac256`
-
-### Auth Token Derivation (Hypothesis)
-
-```python
-import hmac, hashlib
-token = hmac.new(b"fluidra", serial.encode(), hashlib.sha256).hexdigest()
-```
-
-> See `PROTOCOL_FINDINGS.md` for full Cipher analysis, extended component map, security findings,
-> and verification steps.
-
----
-
-## REST API
-
-### Base URL
-```
-https://api.fluidra-emea.com
-```
-
-### Key Endpoints (confirmed working)
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/generic/users/me` | User profile |
-| GET | `/generic/users/me/pools` | User's pools |
-| GET | `/generic/pools/{pool_id}/status` | Pool status |
-| GET | `/generic/devices/{device_id}/components?deviceType=connected` | All component values |
-| GET | `/generic/devices/{device_id}/uiconfig?appId=iaq&deviceType=connected` | UI config (component map) |
-| PUT | `/generic/devices/{device_id}/components/{component_id}?deviceType=connected` | Set component value |
-
-### Set Component Value Payload
-
-```json
-{"desiredValue": <number>}
-```
-
----
-
-## Component IDs (Heat Pump)
-
-| ID | Name | Unit | Notes |
-|----|------|------|-------|
-| 13 | Power | 0/1 | 0=off, 1=on |
-| 14 | Mode | enum | See modes table below |
-| 15 | Set temperature | × 0.1 °C | e.g. 280 = 28.0°C |
-| 19 | Water temperature | × 0.1 °C | Read-only sensor |
-| 137 | (unknown read sensor) | — | From UI JSON |
-| 185 | (unknown read sensor) | — | From UI JSON |
-| 272 | (unknown read) | — | componentRead=272 in UI config |
-| 276 | (unknown write) | — | componentWrite=276 in UI config |
-
-### Mode Values (Component 14)
-
-| Value | Mode |
-|-------|------|
-| 0 | Off |
-| 1 | Heat |
-| 2 | Smart Auto (auto heat/cool) |
-| 3 | Manual Heating |
-| 4 | Cool |
-| 5 | Auto |
-| 6 | Night |
-
----
-
-## iQBridge ZB — Zigbee AT Commands
-
-Source: `package:iaqualink_plus/src/utils/iq_bridge_zb_at_command_codes.dart`
-
-The iQBridge ZB uses AT commands for Zigbee management. Commands observed:
-
-| Command | Description |
-|---------|-------------|
-| `getZigbeeStatus` | Get Zigbee adapter status |
-| `setZigbeeStatus` | Enable/disable Zigbee |
-| `getZigbeeInstallCode` | Get Zigbee install code for pairing |
-| `getZigbeeAddress` | Get Zigbee MAC address |
-| `getAtCommandConfiguration` | Get AT command config |
-| `getDefaultRelayStatusInZigbeeMode` | Get relay default state |
-| `setDefaultRelayStatusInZigbeeMode` | Set relay default state |
-| `formatZigbeeInstallCode` | Format install code for display |
-
-AT commands are sent via the cloud bridge (not directly via BLE on ZB model).
-
----
-
-## iQBridge RS — BLE Protocol
-
-Source: `package:fluidra_ble/src/blue_connect_v3/`
-
-- BLE transport using custom GATT characteristics (`base_uuid.dart`)
-- `BleCommandAndControlMessageProtocol` / `BleConnectMessageProtocol`
-- `BleAccessCode` — access code for pairing (shown in iQBridge app)
-- OTA update via Silicon Labs MCUmgr (`mcumgr.dart`)
-- SPP transport also supported (`spp_transport.dart`)
-
----
-
-## Bundled Firmware
-
-A **Nodon relay** firmware is bundled in the APK assets:
+## 5. Transport of the `amt` heat pump
 
 ```
-assets/flutter_assets/assets/firmwares/nodon/relay2in1/v4_7_0.gbl
+heat pump (ESP32 Wi-Fi) ── MQTT / AWS IoT ──► Fluidra cloud ──► REST + WebSocket ──► Home Assistant
 ```
 
-This is a **Silicon Labs Zigbee GBL firmware** for Nodon SR-2-2-0N (2-channel in-wall relay).
-Not the iQBridge firmware — the iQBridge firmware is delivered via OTA from the cloud.
+- The cloud device record has **no** `commandAndControl.localUdp` for `amt` (that is an
+  iQBridge RS feature, see below).
+- LAN scans found no open TCP port, no reply to UDP probes (incl. 9003/8902), no SSDP and no
+  BLE advertisement in normal operation.
+- BLE SPP is used for provisioning (`info.configuration.capabilities.provisioning.ble`):
+  service `4e7763c4-211b-47b8-88df-cd869df32c48`, RX `54c4dfef-4e04-4c42-9c33-06a6af86280c`,
+  TX `760f6551-4156-4829-8bcc-62591b1eb948`; the app has `SPP8`/`SPP32`/`SPP8X` framing.
+- Whether the app ever talks to the pump on the LAN is being checked with an access-point
+  packet capture: [docs/LOCAL_CAPTURE.md](docs/LOCAL_CAPTURE.md).
 
----
+## 6. App internals — hypothesis (from `libapp.so`)
 
-## Authentication
+The app is Flutter/Dart; the protocol lives in the AOT snapshot. Packages: `generic_api`
+(OpenAPI REST models), `fluidra_iot_generic_api_client`, `fluidra_ble` (iQBridge RS, Lumi+,
+Rio, Nodon), `iaqualink_plus` (app).
 
-**AWS Cognito** (standard SRP flow):
+The cloud chooses the command channel per device (`MobileCommandAndControl`): `…Cloud`
+(WebSocket relay), `…LocalUdp` (LAN UDP to an iQBridge RS) or `…Ble` (iQBridge RS).
 
-| Parameter | Value |
-|-----------|-------|
-| Region | `eu-west-1` |
-| User Pool ID | `eu-west-1_OnopMZF9X` |
-| Client ID | `g3njunelkcbtefosqm9bdhhq1` |
-| Flow | USER_SRP_AUTH → RESPOND_TO_AUTH_CHALLENGE |
+**Local UDP (iQBridge RS only)** — not implemented:
 
-Token is a standard JWT Bearer token used for both REST and WebSocket.
+- Endpoint from `commandAndControl.localUdp` (host, port, token). Port candidates from
+  strings: 9003 (most likely), 8902, 9090, 9298, 5781, 5750, 1800, 1801, 3317, 3844.
+- Packet: `[0x12 0x34][protocol:1][commandId:2 BE][payloadLen:4 BE][payload][CRC32:4][HMAC-SHA256:32]`.
+  Related symbols: `initUdpDeviceListener`, `sendUDPCommand`, `udpKey`, `updateUPDkey`,
+  `generateWorkingKey`, `FluidraMessageProtocol`, `getCrc32Byte`, `hmac256`.
+- Key: `HMAC-SHA256(key="fluidra", msg=serial)` was guessed; `generateWorkingKey` and
+  `updateUPDkey` suggest a refreshable key instead.
 
----
+**iQBridge ZB**: Zigbee managed with AT commands sent through the cloud (`getZigbeeStatus`,
+`setZigbeeStatus`, `getZigbeeInstallCode`, `getZigbeeAddress`, `getAtCommandConfiguration`,
+`get/setDefaultRelayStatusInZigbeeMode`).
 
-## Implementation Priority for HA Integration
+**BLE (iQBridge RS)**: custom GATT (`base_uuid.dart`), `BleCommandAndControlMessageProtocol`,
+`BleAccessCode` for pairing, OTA via MCUmgr, SPP transport.
 
-1. **WebSocket real-time updates** — replace cloud polling with `wss://ws.fluidra-emea.com`
-   - Subscribe on connect: `{"action": "subsDevice", "deviceType": "connected", "deviceId": "..."}`
-   - Push events update coordinator immediately
-   - Target latency: < 2 s (vs 15 min polling)
+**Bundled firmware**: `assets/flutter_assets/assets/firmwares/nodon/relay2in1/v4_7_0.gbl`,
+a Silicon Labs Zigbee image for the Nodon SR-2-2-0N relay, not iQBridge firmware
+([docs/FIRMWARE.md](docs/FIRMWARE.md)).
 
-2. **Local UDP** — direct LAN access (eliminates cloud dependency)
-   - Requires: iQBridge RS device + capture of `MobileCommandAndControlLocalUdp` payload from cloud API
-   - The cloud API returns the local UDP endpoint when iQBridge is on same LAN
-
-3. **BLE** — direct Bluetooth (no network required, mobile-only)
-
----
-
-## Files to Investigate Further
-
-| File | Purpose |
-|------|---------|
-| `package:iaqualink_plus/src/tools/devbar/udp_service/udp_devbar.dart` | Dev tool for UDP — may reveal port/format |
-| `package:iaqualink_plus/src/tools/devbar/websocket_service/web_socket_devbar.dart` | Dev tool for WS — reveals message structure |
-| `package:fluidra_flutter_core/src/application/services/websocket/websocket_service.dart` | WS service implementation |
-| `package:fluidra_ble/src/blue_connect_v3/model.dart` | BLE command model |
+Worth reading next in the app: `iaqualink_plus/src/tools/devbar/udp_service/udp_devbar.dart`,
+`…/devbar/websocket_service/web_socket_devbar.dart`,
+`fluidra_flutter_core/src/application/services/websocket/websocket_service.dart`,
+`fluidra_ble/src/blue_connect_v3/model.dart`.

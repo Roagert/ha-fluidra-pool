@@ -6,8 +6,14 @@ __pycache__/
 .env.*
 
 # Fluidra debug output (contain credentials/tokens/personal data)
-fluidra_debug_*.json
-fluidra_debug_*.txt
+fluidra_debug_*
+
+# Packet captures (LAN traffic, may contain tokens)
+*.pcap*
+captures/
+
+# Local virtualenv
+.venv/
 
 # Python packaging
 *.egg-info/

@@ -2,248 +2,86 @@
   "config": {
     "step": {
       "user": {
-        "title": "Fluidra Pool Configuration",
-        "description": "Enter your Fluidra Pool credentials to connect to your pool devices.",
+        "description": "Log in with the e-mail and password of your Fluidra account.",
         "data": {
-          "username": "Email Address",
+          "username": "E-mail",
           "password": "Password"
         }
       },
-      "device": {
-        "title": "Select Device",
-        "description": "Choose which Fluidra Pool device you want to monitor and control.",
+      "mfa": {
+        "title": "Verification code",
+        "description": "Your Fluidra account asks for a second factor. Enter the code from your authenticator app or SMS.",
         "data": {
-          "device_id": "Device",
-          "component_id": "Component ID (Optional)"
+          "code": "Code"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Log in again",
+        "description": "Fluidra no longer accepts the stored login. Enter the password of your Fluidra account.",
+        "data": {
+          "password": "Password"
         }
       }
     },
     "error": {
-      "invalid_auth": "Invalid credentials. Please check your email and password.",
-      "cannot_connect": "Failed to connect to Fluidra Pool API.",
-      "unknown": "Unexpected error occurred."
+      "invalid_auth": "Wrong e-mail or password.",
+      "invalid_mfa": "Wrong or expired code.",
+      "cannot_connect": "Cannot reach the Fluidra cloud. Try again later.",
+      "unknown": "Unexpected error."
     },
     "abort": {
-      "already_configured": "This device is already configured."
-    }
-  },
-  "options": {
-    "step": {
-      "init": {
-        "title": "Fluidra Pool Options",
-        "description": "Configure update intervals and API rate limiting for your Fluidra Pool integration.",
-        "data": {
-          "update_interval": "Update Interval (minutes)",
-          "api_rate_limit": "API Rate Limit (requests/minute)"
-        }
-      }
+      "already_configured": "This Fluidra account is already configured.",
+      "reauth_successful": "Logged in again."
     }
   },
   "entity": {
-    "sensor": {
-      "fluidra_consumer_data": {
-        "name": "Consumer Data"
-      },
-      "fluidra_devices_data": {
-        "name": "Devices Data"
-      },
-      "fluidra_user_profile_data": {
-        "name": "User Profile Data"
-      },
-      "fluidra_pools_data": {
-        "name": "Pools Data"
-      },
-      "fluidra_pool_status_data": {
-        "name": "Pool Status Data"
-      },
-      "fluidra_user_pools_data": {
-        "name": "User Pools Data"
-      },
-      "fluidra_device_components_data": {
-        "name": "Device Components Data"
-      },
-      "fluidra_device_uiconfig_data": {
-        "name": "Device UI Config Data"
-      },
-      "fluidra_serial_number": {
-        "name": "Serial Number"
-      },
-      "fluidra_owner": {
-        "name": "Owner"
-      },
-      "fluidra_last_update": {
-        "name": "Last Update"
-      },
-      "fluidra_current_temperature": {
-        "name": "Current Temperature"
-      },
-      "fluidra_target_temperature": {
-        "name": "Target Temperature"
-      },
-      "fluidra_heatpump_mode": {
-        "name": "Heat Pump Mode"
-      },
-      "fluidra_device_name": {
-        "name": "Device Name"
-      },
-      "fluidra_device_type": {
-        "name": "Device Type"
-      },
-      "fluidra_device_status": {
-        "name": "Device Status"
-      },
-      "fluidra_device_model": {
-        "name": "Device Model"
-      },
-      "fluidra_device_version": {
-        "name": "Device Version"
-      },
-      "fluidra_device_firmware": {
-        "name": "Firmware Version"
-      },
-      "fluidra_device_sku": {
-        "name": "Device SKU"
-      },
-      "fluidra_device_thing_type": {
-        "name": "Device Type"
-      },
-      "fluidra_device_first_connection": {
-        "name": "First Connection"
-      },
-      "fluidra_device_connection_status": {
-        "name": "Connection Status"
-      },
-      "fluidra_device_session_id": {
-        "name": "Session ID"
-      },
-      "fluidra_device_connectivity_timestamp": {
-        "name": "Last Connectivity"
-      },
-      "fluidra_error_code": {
-        "name": "Error Code"
-      },
-      "fluidra_error_message": {
-        "name": "Error Message"
-      },
-      "fluidra_alarm_status": {
-        "name": "Alarm Status"
-      },
-      "fluidra_alarm_count": {
-        "name": "Alarm Count"
-      },
-      "fluidra_pool_id": {
-        "name": "Pool ID"
-      },
-      "fluidra_pool_water_flow_status": {
-        "name": "Water Flow Status"
-      },
-      "fluidra_pool_filtration_pump_status": {
-        "name": "Filtration Pump Status"
-      },
-      "fluidra_account_created": {
-        "name": "Account Created"
-      },
-      "fluidra_country": {
-        "name": "Country"
-      },
-      "fluidra_language": {
-        "name": "Language"
-      },
-      "fluidra_notifications_enabled": {
-        "name": "Notifications Enabled"
-      },
-      "fluidra_last_api_call": {
-        "name": "Last API Call"
-      },
-      "fluidra_api_calls_per_minute": {
-        "name": "API Calls Per Minute"
-      },
-      "fluidra_next_update": {
-        "name": "Next Update"
-      },
-      "fluidra_update_interval": {
-        "name": "Update Interval"
-      }
-    },
-    "button": {
-      "fluidra_refresh_all_data": {
-        "name": "Refresh All Data"
+    "binary_sensor": {
+      "no_flow": {
+        "name": "No flow"
       }
     },
     "climate": {
-      "fluidra_climate_heatpump": {
-        "name": "Pool Heat Pump"
+      "heat_pump": {
+        "name": "Pool heat pump",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "smart": "Smart",
+              "boost": "Boost",
+              "silence": "Silence"
+            }
+          }
+        }
       }
     },
-    "binary_sensor": {
-      "fluidra_device_online": {
-        "name": "Device Online"
+    "sensor": {
+      "water_temperature": {
+        "name": "Water temperature"
       },
-      "fluidra_device_error": {
-        "name": "Device Error"
+      "air_temperature": {
+        "name": "Air temperature"
       },
-      "fluidra_device_alarm": {
-        "name": "Device Alarm"
+      "target_temperature": {
+        "name": "Target temperature"
       },
-      "fluidra_device_maintenance_required": {
-        "name": "Device Maintenance Required"
+      "wifi_rssi": {
+        "name": "Wi-Fi signal"
       },
-      "fluidra_device_updating": {
-        "name": "Device Updating"
+      "error_information": {
+        "name": "Error information",
+        "state": {
+          "ok": "OK",
+          "alarm": "Alarm"
+        }
       },
-      "fluidra_water_flow_detected": {
-        "name": "Water Flow Detected"
-      },
-      "fluidra_filtration_pump_running": {
-        "name": "Filtration Pump Running"
-      },
-      "fluidra_heater_active": {
-        "name": "Heater Active"
-      },
-      "fluidra_chlorinator_active": {
-        "name": "Chlorinator Active"
-      },
-      "fluidra_pool_light_on": {
-        "name": "Pool Light On"
-      },
-      "fluidra_cleaning_in_progress": {
-        "name": "Cleaning In Progress"
-      },
-      "fluidra_cover_closed": {
-        "name": "Cover Closed"
-      },
-      "fluidra_low_water_level": {
-        "name": "Low Water Level"
-      },
-      "fluidra_high_water_level": {
-        "name": "High Water Level"
-      },
-      "fluidra_notifications_enabled": {
-        "name": "Notifications Enabled"
-      },
-      "fluidra_subscription_active": {
-        "name": "Subscription Active"
+      "component_count": {
+        "name": "Components"
       }
     },
     "switch": {
-      "fluidra_filtration_pump": {
-        "name": "Filtration Pump"
-      },
-      "fluidra_heater": {
-        "name": "Heater"
-      },
-      "fluidra_chlorinator": {
-        "name": "Chlorinator"
-      },
-      "fluidra_pool_light": {
-        "name": "Pool Light"
-      },
-      "fluidra_cleaning": {
-        "name": "Cleaning"
-      },
-      "fluidra_cover": {
-        "name": "Cover"
+      "power": {
+        "name": "Power"
       }
     }
   }
-} 
+}
