@@ -14,6 +14,12 @@ B) heat pump only talks TLS to AWS IoT / Fluidra hosts (MQTT 8883 or 443), nothi
    stock firmware has no local API; T15 is re-scoped to "document + options".
 C) inconclusive (capture missed the window) → repeat U02 once.
 
+Prior evidence (PR #7 branch, `docs/fluidra-unifi-ap-capture-20260517.md`): a 120 s `br0`
+capture on the UniFi AP during two cloud setpoint writes (pump powered off) saw only ARP
+(gratuitous ARP every 60 s) and a TCP RST from port 80 — no DNS, no TLS, no cloud traffic.
+So either the pump was offline from the cloud, or its traffic took another AP interface/VLAN.
+U02 now captures on `-i any` and power-cycles the pump to force DHCP → DNS → TLS.
+
 ## Description
 Write `docs/LOCAL_DECISION.md`: evidence table (from analyzer output), outcome A/B/C,
 and for B the realistic options with effort/risk: (1) stay cloud-push (current),

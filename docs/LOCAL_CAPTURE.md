@@ -20,10 +20,14 @@ If ssh says `no matching host key type`, add `-o HostKeyAlgorithms=+ssh-rsa` aft
 
 ## 2. Start the capture
 
+Before you start, open the app and check the heat pump shows as **online** (a 2026-05-17
+capture of 120 s on `br0` saw no cloud traffic at all, only ARP: the pump may have been offline,
+or on another AP/VLAN path). Capture on `-i any` so every AP interface/VLAN is included.
+
 Terminal 1 (leave it running; `captures/` is git-ignored):
 
     mkdir -p captures
-    ssh $AP "tcpdump -i br0 -nn -s0 -U -w - 'host 192.168.1.29 or ether host ac:15:18:98:15:f0'" > captures/heatpump.pcap
+    ssh $AP "tcpdump -i any -nn -s0 -U -w - 'host 192.168.1.29'" > captures/heatpump.pcap
 
 Terminal 2: a sanity check (the file must grow past 24 bytes), then a clock that prints the
 time each time you press Enter:
@@ -31,30 +35,28 @@ time each time you press Enter:
     ping -c 3 192.168.1.29; ls -l captures/heatpump.pcap
     while read; do date +%T; done
 
-If the file stays at 24 bytes, stop Terminal 1 and rerun it with `-i any` and the filter
-`'host 192.168.1.29'` (`ether host` may be rejected on `any`).
-
-## 3. Test script (about 3 minutes; phone on the home Wi-Fi, not mobile data)
+## 3. Test script (about 10 minutes; phone on the home Wi-Fi, not mobile data)
 
 Press Enter in Terminal 2 at every ▶ to record that clock time.
 
 1. Baseline: touch nothing for 60 s.
-2. ▶ Open the iAquaLink+ app, open the heat pump, pull to refresh.
-3. ▶ Raise the setpoint by 1 °C, then wait 30 s.
-4. ▶ Restore the setpoint.
-5. ▶ Close the app completely (swipe it away), then touch nothing for 60 s.
-6. Press Ctrl-C in both terminals.
+2. ▶ **Power-cycle the heat pump** (its mains switch/breaker off, wait 30 s, on). This is the
+   most important step: on boot it must do DHCP, DNS and a fresh TLS handshake to its cloud,
+   which reveals the cloud host, port and protocol. Wait 3 minutes for it to come back online.
+3. ▶ Open the iAquaLink+ app, open the heat pump, pull to refresh.
+4. ▶ Turn the pump **on** in the app (if that is safe now), wait 30 s, ▶ turn it off again.
+5. ▶ Raise the setpoint by 1 °C, wait 30 s, ▶ restore it.
+6. ▶ Close the app completely (swipe it away), then touch nothing for 2 minutes.
+7. Press Ctrl-C in both terminals.
 
 ## 4. Analyse and send back
 
-Put your four ▶ times in `--marks`:
+Put your ▶ times in `--marks` (comma-separated, any number):
 
-    python3 scripts/analyze_capture.py captures/heatpump.pcap --marks 14:01:00,14:01:20,14:01:50,14:02:00
+    python3 scripts/analyze_capture.py captures/heatpump.pcap --marks 14:01:00,14:05:00,14:05:20,14:05:50,14:06:20,14:06:50,14:07:20
 
 Send back **only the analyzer output** (copy the terminal text), never the pcap: it can contain
-tokens and personal data. The output has no payload bytes; do not add `--payload`. If the
-"LAN UDP/TCP" flag says `none`, repeat steps 2–4 once with `-i any` as above, because traffic
-between two clients on the same radio can bypass `br0`.
+tokens and personal data. The output has no payload bytes; do not add `--payload`.
 
 ## Fallback: Zyxel GS1920 port mirror
 
