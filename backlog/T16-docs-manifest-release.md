@@ -17,6 +17,7 @@ LAN IP `.11` (now `.29`); `PROTOCOL.md` describes the wrong WS auth; README desc
 features that no longer exist.
 
 ## Description
+- Note: invalid manifest keys and `aiohttp` were already removed by the lead to unblock CI hassfest (commit `CI: …`).
 - `manifest.json`: domain, name, codeowners, config_flow, documentation, issue_tracker,
   integration_type `hub`, iot_class `cloud_push`, loggers `["custom_components.fluidra_pool"]`,
   requirements `[]`, version `2.0.0`. `hacs.json`: `homeassistant: "2024.2.0"`.
