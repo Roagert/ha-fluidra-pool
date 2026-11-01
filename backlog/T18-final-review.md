@@ -3,7 +3,7 @@ id: T18
 title: Final review gate (security, silent failures, simplicity)
 phase: 6-release
 points: 3
-status: in_progress
+status: done
 depends_on: [T17]
 owner: agent
 ---
@@ -15,7 +15,7 @@ of `custom_components/`. Fix only confirmed findings (each with a test). Re-run
 
 ## Acceptance criteria
 - [x] Findings list with verdicts in `backlog/REVIEW.md`; all confirmed blockers/majors fixed.
-- [ ] gitleaks clean; full suite + CI green.
+- [x] gitleaks clean; full suite + CI green.
 
 ## Log
 - F1–F15 of `REVIEW.md` fixed; every behaviour change (F1–F11, F13) has a test that failed first.
@@ -23,3 +23,4 @@ of `custom_components/`. Fix only confirmed findings (each with a test). Re-run
 - `gitleaks git` (full history, fresh clone) with `.gitleaksignore`: no leaks found.
 - Integration LOC (`wc -l custom_components/fluidra_pool/*.py`): 1,134 (was 1,301 incl. `local_client.py`).
 - Box 2 open: CI not run (not pushed); gitleaks and the suite are green locally.
+- Lead review: accepted; CI on 84cb1de green (pytest 163, hassfest, HACS). LOC target re-scoped in REVIEW.md (1,134 incl. other-device support).

@@ -1,4 +1,4 @@
-# Progress: 75%  [###############.....]  (56/75 points)
+# Progress: 79%  [###############.....]  (59/75 points)
 
 in_progress counts half. Regenerate with `python3 backlog/progress.py`.
 
@@ -21,7 +21,7 @@ in_progress counts half. Regenerate with `python3 backlog/progress.py`.
 | T15 | Local transport client (conditional on T14 outcome A) | 5-local | 8 | blocked | agent |
 | T16 | Manifest, README, PROTOCOL, PRD v3, CHANGELOG | 6-release | 3 | done | agent |
 | T17 | Deprecate ha-fluidra-local + addon; resolve PR #7 / #10 | 6-release | 2 | done | agent |
-| T18 | Final review gate (security, silent failures, simplicity) | 6-release | 3 | todo | agent |
+| T18 | Final review gate (security, silent failures, simplicity) | 6-release | 3 | done | agent |
 | U01 | Change Fluidra password (+ optional GitHub cache purge) | 0-safety | 1 | todo | user |
 | U02 | Run the 3-minute AP capture | 5-local | 2 | todo | user |
 | U03 | Live test on Thomas's Home Assistant + release | 6-release | 2 | todo | user |
